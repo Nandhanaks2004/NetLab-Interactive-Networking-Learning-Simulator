@@ -1,0 +1,2019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetLab — Interactive Networking Simulator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+:root {
+  --bg: #070b14;
+  --surface: #0d1526;
+  --surface2: #111d35;
+  --border: #1e3a5f;
+  --blue: #00aaff;
+  --blue-dim: #005580;
+  --green: #00ff88;
+  --green-dim: #005533;
+  --red: #ff3366;
+  --red-dim: #550022;
+  --yellow: #ffcc00;
+  --yellow-dim: #554400;
+  --purple: #aa55ff;
+  --orange: #ff8800;
+  --cyan: #00ffee;
+  --text: #c8d8f0;
+  --text-dim: #5a7a9a;
+  --glow-blue: 0 0 20px rgba(0,170,255,0.4);
+  --glow-green: 0 0 20px rgba(0,255,136,0.4);
+  --glow-red: 0 0 20px rgba(255,51,102,0.4);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Exo 2', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Grid background */
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(0,170,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,170,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ── NAV ── */
+#nav {
+  position: fixed;
+  top:0; left:0; right:0;
+  height:56px;
+  background: rgba(7,11,20,0.95);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap:4px;
+  padding: 0 12px;
+  z-index: 1000;
+  overflow-x: auto;
+  backdrop-filter: blur(10px);
+}
+#nav::-webkit-scrollbar { height:2px; }
+#nav::-webkit-scrollbar-thumb { background:var(--blue-dim); }
+
+.nav-logo {
+  font-family:'Share Tech Mono', monospace;
+  color: var(--blue);
+  font-size:1.1rem;
+  white-space:nowrap;
+  margin-right:12px;
+  text-shadow: var(--glow-blue);
+}
+.nav-logo span { color:var(--green); }
+
+.nav-btn {
+  flex-shrink:0;
+  background:none;
+  border:1px solid transparent;
+  color:var(--text-dim);
+  font-family:'Exo 2',sans-serif;
+  font-size:0.72rem;
+  font-weight:600;
+  padding:5px 10px;
+  border-radius:4px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:all 0.2s;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+}
+.nav-btn:hover { color:var(--blue); border-color:var(--blue-dim); }
+.nav-btn.active {
+  color:var(--blue);
+  border-color:var(--blue);
+  background:rgba(0,170,255,0.08);
+  text-shadow: var(--glow-blue);
+}
+
+/* ── SECTIONS ── */
+.section {
+  display:none;
+  min-height: calc(100vh - 56px);
+  margin-top:56px;
+  padding:32px 24px;
+  max-width:1200px;
+  margin-left:auto;
+  margin-right:auto;
+  position:relative;
+  z-index:1;
+  animation: fadeIn 0.4s ease;
+}
+.section.active { display:block; }
+
+@keyframes fadeIn {
+  from { opacity:0; transform:translateY(10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ── TYPOGRAPHY ── */
+.sec-title {
+  font-family:'Share Tech Mono', monospace;
+  font-size:1.8rem;
+  color:var(--blue);
+  text-shadow:var(--glow-blue);
+  margin-bottom:6px;
+  letter-spacing:0.05em;
+}
+.sec-sub {
+  color:var(--text-dim);
+  font-size:0.9rem;
+  margin-bottom:32px;
+  font-family:'JetBrains Mono', monospace;
+}
+
+/* ── CARDS ── */
+.card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:24px;
+  margin-bottom:24px;
+  transition:border-color 0.2s;
+}
+.card:hover { border-color:var(--blue-dim); }
+.card-title {
+  font-size:1rem;
+  font-weight:700;
+  color:var(--blue);
+  margin-bottom:14px;
+  font-family:'Share Tech Mono',monospace;
+  letter-spacing:0.05em;
+}
+
+/* ── GRID ── */
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }
+@media(max-width:700px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+/* ── DIAGRAM BASE ── */
+.diagram {
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:24px;
+  min-height:200px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  overflow:hidden;
+}
+
+/* ── NODES ── */
+.node {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  cursor:pointer;
+  transition:transform 0.2s;
+}
+.node:hover { transform:scale(1.1); }
+.node-icon {
+  width:60px; height:60px;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1.8rem;
+  border:2px solid;
+}
+.node-label {
+  font-family:'Share Tech Mono',monospace;
+  font-size:0.72rem;
+  color:var(--text-dim);
+  text-align:center;
+}
+.node-label.active { color:var(--blue); text-shadow:var(--glow-blue); }
+
+.node-blue .node-icon  { background:rgba(0,170,255,0.1);  border-color:var(--blue);   color:var(--blue); }
+.node-green .node-icon { background:rgba(0,255,136,0.1);  border-color:var(--green);  color:var(--green); }
+.node-red .node-icon   { background:rgba(255,51,102,0.1); border-color:var(--red);    color:var(--red); }
+.node-yellow .node-icon{ background:rgba(255,204,0,0.1);  border-color:var(--yellow); color:var(--yellow); }
+.node-purple .node-icon{ background:rgba(170,85,255,0.1); border-color:var(--purple); color:var(--purple); }
+
+/* ── ARROW ── */
+.arrow {
+  flex-shrink:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+}
+.arrow-line {
+  width:60px; height:2px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  position:relative;
+  border-radius:2px;
+}
+.arrow-label {
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.6rem;
+  color:var(--text-dim);
+}
+.arrow-animated .arrow-line::after {
+  content:'';
+  position:absolute;
+  top:-3px; left:0;
+  width:8px; height:8px;
+  background:var(--cyan);
+  border-radius:50%;
+  box-shadow:0 0 8px var(--cyan);
+  animation:slideRight 1s linear infinite;
+}
+@keyframes slideRight {
+  from{left:0} to{left:calc(100% - 8px)}
+}
+
+/* ── BUTTONS ── */
+.btn {
+  background:none;
+  border:1px solid var(--blue);
+  color:var(--blue);
+  font-family:'Exo 2',sans-serif;
+  font-size:0.85rem;
+  font-weight:700;
+  padding:8px 18px;
+  border-radius:6px;
+  cursor:pointer;
+  transition:all 0.2s;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+}
+.btn:hover {
+  background:var(--blue);
+  color:var(--bg);
+  box-shadow:var(--glow-blue);
+}
+.btn-green { border-color:var(--green); color:var(--green); }
+.btn-green:hover { background:var(--green); color:var(--bg); box-shadow:var(--glow-green); }
+.btn-red { border-color:var(--red); color:var(--red); }
+.btn-red:hover { background:var(--red); color:var(--bg); box-shadow:var(--glow-red); }
+
+/* ── TOOLTIP ── */
+.tooltip {
+  background:var(--surface2);
+  border:1px solid var(--blue);
+  border-radius:8px;
+  padding:12px 16px;
+  font-size:0.85rem;
+  line-height:1.6;
+  color:var(--text);
+  box-shadow:var(--glow-blue);
+  animation:fadeIn 0.3s ease;
+  margin-top:12px;
+}
+.tooltip strong { color:var(--blue); }
+
+/* ── OSI LAYERS ── */
+.osi-layer {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 16px;
+  border-radius:6px;
+  border:1px solid transparent;
+  cursor:pointer;
+  transition:all 0.2s;
+  margin-bottom:6px;
+}
+.osi-layer:hover, .osi-layer.active { border-color:currentColor; }
+.osi-num {
+  width:28px; height:28px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Share Tech Mono',monospace;
+  font-size:0.8rem;
+  font-weight:700;
+  flex-shrink:0;
+}
+.osi-info { flex:1; }
+.osi-name { font-weight:700; font-size:0.9rem; }
+.osi-fn { font-size:0.72rem; color:var(--text-dim); }
+.osi-eg { font-family:'JetBrains Mono',monospace; font-size:0.7rem; }
+
+/* ── TABLE ── */
+.table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+.table th {
+  background:var(--surface2);
+  color:var(--blue);
+  font-family:'Share Tech Mono',monospace;
+  letter-spacing:0.05em;
+  padding:10px 14px;
+  text-align:left;
+  border-bottom:1px solid var(--border);
+}
+.table td {
+  padding:9px 14px;
+  border-bottom:1px solid rgba(30,58,95,0.5);
+  color:var(--text);
+}
+.table tr:hover td { background:rgba(0,170,255,0.04); }
+
+/* ── INPUT ── */
+.inp {
+  background:var(--surface2);
+  border:1px solid var(--border);
+  color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.9rem;
+  padding:8px 14px;
+  border-radius:6px;
+  outline:none;
+  transition:border-color 0.2s;
+}
+.inp:focus { border-color:var(--blue); box-shadow:var(--glow-blue); }
+.inp-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+/* ── BADGE ── */
+.badge {
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:4px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:0.72rem;
+}
+.badge-blue  { background:rgba(0,170,255,0.15); color:var(--blue);   border:1px solid var(--blue-dim); }
+.badge-green { background:rgba(0,255,136,0.15); color:var(--green);  border:1px solid var(--green-dim); }
+.badge-red   { background:rgba(255,51,102,0.15);color:var(--red);    border:1px solid var(--red-dim); }
+.badge-yellow{ background:rgba(255,204,0,0.15); color:var(--yellow); border:1px solid var(--yellow-dim); }
+.badge-purple{ background:rgba(170,85,255,0.15);color:var(--purple); border:1px solid #552288; }
+
+/* ── PROGRESS BAR ── */
+.progress-bar {
+  height:6px;
+  background:var(--surface2);
+  border-radius:3px;
+  overflow:hidden;
+  margin:6px 0;
+}
+.progress-fill {
+  height:100%;
+  border-radius:3px;
+  transition:width 0.6s ease;
+}
+
+/* ── PACKET ANIMATION ── */
+@keyframes packetFlow {
+  0%   { left:-40px; opacity:0; }
+  10%  { opacity:1; }
+  90%  { opacity:1; }
+  100% { left:calc(100% + 40px); opacity:0; }
+}
+.packet {
+  position:absolute;
+  width:30px; height:18px;
+  border-radius:4px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:0.6rem;
+  font-family:'Share Tech Mono',monospace;
+  font-weight:700;
+  top:50%;
+  transform:translateY(-50%);
+  animation:packetFlow 1.5s ease-in-out;
+  pointer-events:none;
+}
+
+/* ── SUBNET BITS ── */
+.bit-box {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:28px; height:28px;
+  border-radius:4px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:0.8rem;
+  font-weight:700;
+  border:1px solid;
+  transition:all 0.3s;
+}
+.bit-network  { background:rgba(0,170,255,0.15); color:var(--blue);   border-color:var(--blue-dim); }
+.bit-borrowed { background:rgba(255,204,0,0.15); color:var(--yellow); border-color:var(--yellow-dim); }
+.bit-host     { background:rgba(0,255,136,0.15); color:var(--green);  border-color:var(--green-dim); }
+
+/* ── QUIZ ── */
+.quiz-opt {
+  display:block;
+  width:100%;
+  text-align:left;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  color:var(--text);
+  font-family:'Exo 2',sans-serif;
+  font-size:0.9rem;
+  padding:10px 16px;
+  border-radius:6px;
+  cursor:pointer;
+  margin-bottom:8px;
+  transition:all 0.2s;
+}
+.quiz-opt:hover { border-color:var(--blue); color:var(--blue); }
+.quiz-opt.correct { border-color:var(--green)!important; background:rgba(0,255,136,0.1)!important; color:var(--green)!important; }
+.quiz-opt.wrong   { border-color:var(--red)!important;   background:rgba(255,51,102,0.1)!important; color:var(--red)!important; }
+
+/* ── SLIDER ── */
+input[type=range] {
+  -webkit-appearance:none;
+  width:100%;
+  height:6px;
+  border-radius:3px;
+  background: linear-gradient(90deg, var(--blue) var(--pct, 50%), var(--surface2) var(--pct, 50%));
+  outline:none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none;
+  width:18px; height:18px;
+  border-radius:50%;
+  background:var(--blue);
+  box-shadow:var(--glow-blue);
+  cursor:pointer;
+}
+
+/* ── TOPOLOGY SVG ── */
+.topo-canvas { width:100%; height:240px; }
+
+/* ── PROTOCOL STEPS ── */
+.proto-step {
+  display:flex;
+  gap:14px;
+  padding:12px 16px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  margin-bottom:10px;
+  cursor:pointer;
+  transition:all 0.2s;
+  opacity:0.5;
+}
+.proto-step.active {
+  opacity:1;
+  box-shadow:var(--glow-blue);
+}
+.proto-step-num {
+  width:32px; height:32px;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Share Tech Mono',monospace;
+  font-weight:700;
+  font-size:0.9rem;
+  flex-shrink:0;
+}
+.proto-step-body { flex:1; }
+.proto-step-title { font-weight:700; font-size:0.9rem; }
+.proto-step-desc  { font-size:0.8rem; color:var(--text-dim); margin-top:3px; line-height:1.5; }
+.proto-step-code  {
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.75rem;
+  background:var(--surface);
+  padding:6px 10px;
+  border-radius:4px;
+  margin-top:6px;
+  color:var(--cyan);
+  display:none;
+}
+.proto-step.active .proto-step-code { display:block; }
+
+/* ── FINAL SIM ── */
+.sim-stage {
+  width:100%;
+  height:300px;
+  position:relative;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  overflow:hidden;
+}
+.sim-node {
+  position:absolute;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+.sim-icon {
+  width:52px; height:52px;
+  border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.5rem;
+  border:2px solid;
+  transition:all 0.3s;
+}
+.sim-label { font-family:'Share Tech Mono',monospace; font-size:0.65rem; color:var(--text-dim); }
+
+.sim-packet {
+  position:absolute;
+  width:36px; height:20px;
+  border-radius:4px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.6rem;
+  font-family:'Share Tech Mono',monospace;
+  font-weight:700;
+  pointer-events:none;
+  z-index:10;
+  transition:all 0.5s ease;
+}
+
+.sim-log {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:12px 16px;
+  height:120px;
+  overflow-y:auto;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.78rem;
+  margin-top:12px;
+}
+.sim-log::-webkit-scrollbar { width:4px; }
+.sim-log::-webkit-scrollbar-thumb { background:var(--blue-dim); }
+.log-entry { padding:2px 0; }
+.log-entry.blue   { color:var(--blue); }
+.log-entry.green  { color:var(--green); }
+.log-entry.yellow { color:var(--yellow); }
+.log-entry.red    { color:var(--red); }
+
+/* ── SECURITY FLOW ── */
+.sec-device {
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.sec-shield {
+  width:56px; height:56px;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.6rem;
+  border:2px solid;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--blue-dim); border-radius:3px; }
+
+/* Responsive tweaks */
+@media(max-width:600px){
+  .sec-title{font-size:1.3rem;}
+  .diagram{flex-direction:column;gap:16px;}
+  .arrow-line{width:2px;height:40px;background:linear-gradient(var(--blue),var(--cyan));}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-logo">Net<span>Lab</span></div>
+  <button class="nav-btn active" onclick="showSection('s1',this)">01 Basics</button>
+  <button class="nav-btn" onclick="showSection('s2',this)">02 Types</button>
+  <button class="nav-btn" onclick="showSection('s3',this)">03 Devices</button>
+  <button class="nav-btn" onclick="showSection('s4',this)">04 Protocols</button>
+  <button class="nav-btn" onclick="showSection('s5',this)">05 OSI</button>
+  <button class="nav-btn" onclick="showSection('s6',this)">06 TCP/IP</button>
+  <button class="nav-btn" onclick="showSection('s7',this)">07 TCP vs UDP</button>
+  <button class="nav-btn" onclick="showSection('s8',this)">08 IP Addr</button>
+  <button class="nav-btn" onclick="showSection('s9',this)">09 Subnetting</button>
+  <button class="nav-btn" onclick="showSection('s10',this)">10 CIDR</button>
+  <button class="nav-btn" onclick="showSection('s11',this)">11 Security</button>
+  <button class="nav-btn" onclick="showSection('s12',this)">12 Final Sim</button>
+</nav>
+
+<!-- ==================== SECTION 1: NETWORK BASICS ==================== -->
+<section class="section active" id="s1">
+  <div class="sec-title">// 01 — What Is a Network?</div>
+  <div class="sec-sub">Click on each device to learn what it does</div>
+
+  <div class="card">
+    <div class="card-title">The Basic Network Diagram</div>
+    <div class="diagram" style="gap:0; justify-content:space-around; flex-wrap:wrap;">
+      <div class="node node-blue" onclick="showInfo('laptop','Your Laptop 💻','Your device — where you type URLs and see web pages. It has an IP and MAC address.','192.168.1.10','00:1A:2B:3C:4D:5E')">
+        <div class="node-icon">💻</div>
+        <div class="node-label" id="lbl-laptop">Your Laptop</div>
+      </div>
+      <div class="arrow arrow-animated"><div class="arrow-line"></div><div class="arrow-label">LAN</div></div>
+      <div class="node node-yellow" onclick="showInfo('switch','Switch 🔀','A switch connects devices on the same local network. It reads MAC addresses to forward frames correctly.','N/A','Reads MACs')">
+        <div class="node-icon">🔀</div>
+        <div class="node-label" id="lbl-switch">Switch</div>
+      </div>
+      <div class="arrow arrow-animated"><div class="arrow-line"></div><div class="arrow-label">LAN→WAN</div></div>
+      <div class="node node-blue" onclick="showInfo('router','Router 🌐','A router connects different networks. It decides the best path for your data using IP addresses.','192.168.1.1','Gateway')">
+        <div class="node-icon">🌐</div>
+        <div class="node-label" id="lbl-router">Router</div>
+      </div>
+      <div class="arrow arrow-animated"><div class="arrow-line"></div><div class="arrow-label">Internet</div></div>
+      <div class="node node-purple" onclick="showInfo('dns','DNS Server 🗂️','The phone book of the internet. Converts "google.com" to an IP like 142.250.80.46 so routers know where to send data.','8.8.8.8','DNS')">
+        <div class="node-icon">🗂️</div>
+        <div class="node-label" id="lbl-dns">DNS Server</div>
+      </div>
+      <div class="arrow arrow-animated"><div class="arrow-line"></div><div class="arrow-label">WAN</div></div>
+      <div class="node node-green" onclick="showInfo('server','Web Server 🖥️','Stores and serves website files. When you type a URL, this machine sends back HTML, images and data.','142.250.80.46','Server IP')">
+        <div class="node-icon">🖥️</div>
+        <div class="node-label" id="lbl-server">Web Server</div>
+      </div>
+    </div>
+    <div id="device-info"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">The Postal Analogy 📬</div>
+      <p style="font-size:0.88rem;line-height:1.8;color:var(--text)">
+        Think of a network like a mail system:<br>
+        <span style="color:var(--blue)">▸ Your device</span> = You writing a letter<br>
+        <span style="color:var(--yellow)">▸ IP address</span> = House address on the envelope<br>
+        <span style="color:var(--green)">▸ Router</span> = Post office sorting letters<br>
+        <span style="color:var(--cyan)">▸ Switch</span> = Postman on your street<br>
+        <span style="color:var(--purple)">▸ DNS</span> = Directory to find addresses<br>
+        <span style="color:var(--orange)">▸ Protocol</span> = Rules for how mail is handled
+      </p>
+    </div>
+    <div class="card">
+      <div class="card-title">Key Terms Quick Reference</div>
+      <table class="table">
+        <tr><th>Term</th><th>Meaning</th></tr>
+        <tr><td><span class="badge badge-blue">Network</span></td><td>2+ devices connected to share resources</td></tr>
+        <tr><td><span class="badge badge-yellow">Protocol</span></td><td>Agreed rules for communication</td></tr>
+        <tr><td><span class="badge badge-green">Packet</span></td><td>Small chunk of data sent across network</td></tr>
+        <tr><td><span class="badge badge-purple">Bandwidth</span></td><td>Max data transfer rate (Mbps/Gbps)</td></tr>
+        <tr><td><span class="badge badge-red">Latency</span></td><td>Delay in data travel time (ms)</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 2: TYPES & TOPOLOGIES ==================== -->
+<section class="section" id="s2">
+  <div class="sec-title">// 02 — Network Types & Topologies</div>
+  <div class="sec-sub">Toggle between types and topologies to see diagrams</div>
+
+  <div class="card">
+    <div class="card-title">Network Types — Click to Explore</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+      <button class="btn" onclick="showNetType('pan')">PAN</button>
+      <button class="btn" onclick="showNetType('lan')">LAN</button>
+      <button class="btn" onclick="showNetType('man')">MAN</button>
+      <button class="btn" onclick="showNetType('wan')">WAN</button>
+    </div>
+    <div id="nettype-display" class="diagram" style="flex-direction:column;align-items:flex-start;padding:20px;min-height:120px;">
+      <div style="color:var(--text-dim);font-size:0.9rem;">👆 Click a network type above</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Network Topologies — Click to Switch</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+      <button class="btn" onclick="showTopo('star')">⭐ Star</button>
+      <button class="btn" onclick="showTopo('bus')">🚌 Bus</button>
+      <button class="btn" onclick="showTopo('ring')">⭕ Ring</button>
+      <button class="btn" onclick="showTopo('mesh')">🕸️ Mesh</button>
+    </div>
+    <svg id="topo-svg" class="topo-canvas" viewBox="0 0 600 220">
+      <text x="300" y="110" text-anchor="middle" fill="#5a7a9a" font-size="16">Select a topology above</text>
+    </svg>
+    <div id="topo-info" style="font-size:0.85rem;color:var(--text-dim);margin-top:8px;"></div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 3: DEVICES & DATA FLOW ==================== -->
+<section class="section" id="s3">
+  <div class="sec-title">// 03 — Network Devices & Data Flow</div>
+  <div class="sec-sub">Click devices to learn, then animate the packet journey</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Network Devices</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="proto-step" onclick="showDevice(this,'hub')" style="border-color:var(--yellow);">
+          <div class="proto-step-num" style="background:rgba(255,204,0,0.15);color:var(--yellow);">🔆</div>
+          <div class="proto-step-body"><div class="proto-step-title">Hub</div><div class="proto-step-desc" id="hub-desc">Click to learn</div></div>
+        </div>
+        <div class="proto-step" onclick="showDevice(this,'switch')" style="border-color:var(--blue);">
+          <div class="proto-step-num" style="background:rgba(0,170,255,0.15);color:var(--blue);">🔀</div>
+          <div class="proto-step-body"><div class="proto-step-title">Switch</div><div class="proto-step-desc" id="switch-desc">Click to learn</div></div>
+        </div>
+        <div class="proto-step" onclick="showDevice(this,'router')" style="border-color:var(--green);">
+          <div class="proto-step-num" style="background:rgba(0,255,136,0.15);color:var(--green);">🌐</div>
+          <div class="proto-step-body"><div class="proto-step-title">Router</div><div class="proto-step-desc" id="router-desc">Click to learn</div></div>
+        </div>
+        <div class="proto-step" onclick="showDevice(this,'firewall')" style="border-color:var(--red);">
+          <div class="proto-step-num" style="background:rgba(255,51,102,0.15);color:var(--red);">🔥</div>
+          <div class="proto-step-body"><div class="proto-step-title">Firewall</div><div class="proto-step-desc" id="firewall-desc">Click to learn</div></div>
+        </div>
+        <div class="proto-step" onclick="showDevice(this,'modem')" style="border-color:var(--purple);">
+          <div class="proto-step-num" style="background:rgba(170,85,255,0.15);color:var(--purple);">📡</div>
+          <div class="proto-step-body"><div class="proto-step-title">Modem</div><div class="proto-step-desc" id="modem-desc">Click to learn</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Packet Journey — Animate!</div>
+      <div id="flow-diag" class="diagram" style="flex-direction:column;gap:8px;min-height:180px;position:relative;">
+        <div style="display:flex;align-items:center;gap:6px;width:100%;justify-content:space-around;">
+          <div class="node node-blue" style="cursor:default"><div class="node-icon" style="width:44px;height:44px;font-size:1.3rem;">💻</div><div class="node-label">Laptop</div></div>
+          <div style="flex:1;height:2px;background:linear-gradient(90deg,var(--blue),var(--yellow));position:relative;" id="seg1">
+            <div class="arrow-label" style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);">→</div>
+          </div>
+          <div class="node node-yellow" style="cursor:default"><div class="node-icon" style="width:44px;height:44px;font-size:1.3rem;">🔀</div><div class="node-label">Switch</div></div>
+          <div style="flex:1;height:2px;background:linear-gradient(90deg,var(--yellow),var(--green));position:relative;" id="seg2">
+            <div class="arrow-label" style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);">→</div>
+          </div>
+          <div class="node node-green" style="cursor:default"><div class="node-icon" style="width:44px;height:44px;font-size:1.3rem;">🌐</div><div class="node-label">Router</div></div>
+          <div style="flex:1;height:2px;background:linear-gradient(90deg,var(--green),var(--purple));position:relative;" id="seg3">
+            <div class="arrow-label" style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);">→</div>
+          </div>
+          <div class="node node-purple" style="cursor:default"><div class="node-icon" style="width:44px;height:44px;font-size:1.3rem;">☁️</div><div class="node-label">Internet</div></div>
+          <div style="flex:1;height:2px;background:linear-gradient(90deg,var(--purple),var(--cyan));position:relative;" id="seg4">
+            <div class="arrow-label" style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);">→</div>
+          </div>
+          <div class="node node-blue" style="cursor:default"><div class="node-icon" style="width:44px;height:44px;font-size:1.3rem;">🖥️</div><div class="node-label">Server</div></div>
+        </div>
+        <div id="flow-status" style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text-dim);margin-top:8px;"></div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-green" onclick="animatePacket()">▶ Send Packet</button>
+        <button class="btn" onclick="resetPacket()">↺ Reset</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 4: PROTOCOL FLOW ==================== -->
+<section class="section" id="s4">
+  <div class="sec-title">// 04 — Protocol Flow Simulator</div>
+  <div class="sec-sub">Type a domain and step through every protocol involved</div>
+
+  <div class="card">
+    <div class="inp-row" style="margin-bottom:16px;">
+      <input class="inp" id="proto-domain" value="example.com" style="width:220px;" placeholder="Enter domain...">
+      <button class="btn btn-green" onclick="startProtoSim()">▶ Simulate</button>
+      <button class="btn" onclick="resetProto()">↺ Reset</button>
+    </div>
+
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:280px;">
+        <!-- Protocol steps -->
+        <div class="proto-step" id="ps1" onclick="activateProtoStep(1)">
+          <div class="proto-step-num" style="background:rgba(0,170,255,0.15);color:var(--blue);">1</div>
+          <div class="proto-step-body">
+            <div class="proto-step-title">🗂️ DNS Lookup</div>
+            <div class="proto-step-desc">Browser asks: "What is the IP of <span id="ps1-domain">example.com</span>?"</div>
+            <div class="proto-step-code">UDP Query → 8.8.8.8:53<br>Query: A <span id="ps1-domain2">example.com</span><br>Response: 93.184.216.34</div>
+          </div>
+        </div>
+        <div class="proto-step" id="ps2" onclick="activateProtoStep(2)">
+          <div class="proto-step-num" style="background:rgba(255,204,0,0.15);color:var(--yellow);">2</div>
+          <div class="proto-step-body">
+            <div class="proto-step-title">🔎 ARP Resolution</div>
+            <div class="proto-step-desc">Find the MAC address of the default gateway (router)</div>
+            <div class="proto-step-code">Broadcast: "Who has 192.168.1.1?"<br>Reply: "I have it — MAC: AA:BB:CC:DD:EE:FF"</div>
+          </div>
+        </div>
+        <div class="proto-step" id="ps3" onclick="activateProtoStep(3)">
+          <div class="proto-step-num" style="background:rgba(0,255,136,0.15);color:var(--green);">3</div>
+          <div class="proto-step-body">
+            <div class="proto-step-title">🤝 TCP 3-Way Handshake</div>
+            <div class="proto-step-desc">Establish a reliable connection before sending data</div>
+            <div class="proto-step-code">Client → Server: SYN<br>Server → Client: SYN-ACK<br>Client → Server: ACK ✓ Connected!</div>
+          </div>
+        </div>
+        <div class="proto-step" id="ps4" onclick="activateProtoStep(4)">
+          <div class="proto-step-num" style="background:rgba(170,85,255,0.15);color:var(--purple);">4</div>
+          <div class="proto-step-body">
+            <div class="proto-step-title">📤 HTTP Request</div>
+            <div class="proto-step-desc">Browser requests the web page</div>
+            <div class="proto-step-code">GET / HTTP/1.1<br>Host: <span id="ps4-domain">example.com</span><br>User-Agent: Mozilla/5.0</div>
+          </div>
+        </div>
+        <div class="proto-step" id="ps5" onclick="activateProtoStep(5)">
+          <div class="proto-step-num" style="background:rgba(0,255,238,0.15);color:var(--cyan);">5</div>
+          <div class="proto-step-body">
+            <div class="proto-step-title">📥 Server Response</div>
+            <div class="proto-step-desc">Server sends back the HTML content</div>
+            <div class="proto-step-code">HTTP/1.1 200 OK<br>Content-Type: text/html<br>&lt;html&gt;...Page Content...&lt;/html&gt;</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:240px;">
+        <div class="card" style="margin:0;background:var(--surface2);">
+          <div class="card-title">Protocol Explanation</div>
+          <div id="proto-explain" style="font-size:0.88rem;line-height:1.8;color:var(--text-dim);">
+            Click a step or press Simulate to begin.
+          </div>
+        </div>
+        <div id="proto-visual" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 5: OSI MODEL ==================== -->
+<section class="section" id="s5">
+  <div class="sec-title">// 05 — OSI Model</div>
+  <div class="sec-sub">Click each layer to reveal its function and real-world examples</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">7 Layers — Click Any Layer</div>
+      <div id="osi-layers"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Layer Details</div>
+      <div id="osi-detail" style="font-size:0.88rem;line-height:1.8;color:var(--text-dim);">
+        👈 Click a layer to see its details
+      </div>
+      <div style="margin-top:16px;">
+        <div class="card-title">Data Flow Direction</div>
+        <div style="display:flex;gap:8px;font-size:0.8rem;color:var(--text-dim);">
+          <span style="color:var(--blue);">▼ Sender: Layer 7→1 (Encapsulation)</span>
+        </div>
+        <div style="display:flex;gap:8px;font-size:0.8rem;color:var(--text-dim);margin-top:4px;">
+          <span style="color:var(--green);">▲ Receiver: Layer 1→7 (Decapsulation)</span>
+        </div>
+        <div id="osi-data-unit" style="margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:0.8rem;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 6: TCP/IP MODEL ==================== -->
+<section class="section" id="s6">
+  <div class="sec-title">// 06 — TCP/IP Model</div>
+  <div class="sec-sub">Compare the 4-layer TCP/IP model with the 7-layer OSI model</div>
+
+  <div class="card">
+    <div class="card-title">OSI ↔ TCP/IP Mapping</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;">
+      <div style="flex:1;min-width:200px;">
+        <div style="text-align:center;color:var(--blue);font-family:'Share Tech Mono',monospace;margin-bottom:12px;">OSI (7 Layers)</div>
+        <div id="osi-map"></div>
+      </div>
+      <div style="display:flex;align-items:center;padding:0 10px;">
+        <div style="color:var(--text-dim);font-size:2rem;">↔</div>
+      </div>
+      <div style="flex:1;min-width:200px;">
+        <div style="text-align:center;color:var(--green);font-family:'Share Tech Mono',monospace;margin-bottom:12px;">TCP/IP (4 Layers)</div>
+        <div id="tcpip-map"></div>
+      </div>
+    </div>
+    <div id="tcpip-detail" style="margin-top:16px;font-size:0.88rem;line-height:1.8;color:var(--text-dim);"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Encapsulation Process</div>
+    <div style="display:flex;flex-direction:column;gap:8px;" id="encap-layers"></div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 7: TCP vs UDP ==================== -->
+<section class="section" id="s7">
+  <div class="sec-title">// 07 — TCP vs UDP</div>
+  <div class="sec-sub">Understand when to use each protocol</div>
+
+  <div class="card">
+    <div class="card-title">Comparison Table</div>
+    <table class="table">
+      <tr><th>Feature</th><th style="color:var(--blue)">TCP</th><th style="color:var(--red)">UDP</th></tr>
+      <tr><td>Connection</td><td><span class="badge badge-blue">Connection-oriented</span></td><td><span class="badge badge-red">Connectionless</span></td></tr>
+      <tr><td>Reliability</td><td>✅ Guaranteed delivery</td><td>❌ No guarantee</td></tr>
+      <tr><td>Order</td><td>✅ In-order delivery</td><td>❌ May arrive out of order</td></tr>
+      <tr><td>Speed</td><td>🐢 Slower (overhead)</td><td>⚡ Faster (no handshake)</td></tr>
+      <tr><td>Error Check</td><td>✅ Yes (retransmit)</td><td>⚠️ Checksum only</td></tr>
+      <tr><td>Use Case</td><td>Web, Email, FTP</td><td>Video, DNS, Gaming</td></tr>
+      <tr><td>Port Examples</td><td>HTTP:80, HTTPS:443</td><td>DNS:53, DHCP:67/68</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">TCP 3-Way Handshake — Animate!</div>
+    <div id="handshake-diag" style="display:flex;justify-content:space-between;align-items:flex-start;padding:20px;background:var(--surface2);border-radius:8px;min-height:220px;position:relative;">
+      <div style="text-align:center;width:80px;">
+        <div style="font-size:2rem;">💻</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--blue);">CLIENT</div>
+      </div>
+      <div id="handshake-arrows" style="flex:1;display:flex;flex-direction:column;gap:16px;padding:10px 20px;"></div>
+      <div style="text-align:center;width:80px;">
+        <div style="font-size:2rem;">🖥️</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--green);">SERVER</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-green" onclick="animateHandshake()">▶ Animate Handshake</button>
+      <button class="btn" onclick="resetHandshake()">↺ Reset</button>
+    </div>
+    <div id="handshake-explain" style="margin-top:12px;font-size:0.85rem;color:var(--text-dim);"></div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 8: IP ADDRESSING ==================== -->
+<section class="section" id="s8">
+  <div class="sec-title">// 08 — IP Addressing</div>
+  <div class="sec-sub">Enter an IP address to analyze its structure</div>
+
+  <div class="card">
+    <div class="card-title">IP Address Analyzer</div>
+    <div class="inp-row" style="margin-bottom:16px;">
+      <input class="inp" id="ip-input" value="192.168.1.100" style="width:200px;">
+      <button class="btn" onclick="analyzeIP()">Analyze</button>
+    </div>
+    <div id="ip-result"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">IP vs MAC Address</div>
+      <table class="table">
+        <tr><th>Property</th><th>IP Address</th><th>MAC Address</th></tr>
+        <tr><td>Layer</td><td>Layer 3 (Network)</td><td>Layer 2 (Data Link)</td></tr>
+        <tr><td>Analogy</td><td>House Address</td><td>Person's ID Card</td></tr>
+        <tr><td>Changes?</td><td>Yes (dynamic)</td><td>No (hardware burned)</td></tr>
+        <tr><td>Format</td><td>192.168.1.1</td><td>AA:BB:CC:DD:EE:FF</td></tr>
+        <tr><td>Length</td><td>32 bits (IPv4)</td><td>48 bits</td></tr>
+        <tr><td>Assigned by</td><td>DHCP / Manual</td><td>Manufacturer</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Private IP Ranges</div>
+      <div style="font-size:0.88rem;line-height:1.8;">
+        <div style="margin-bottom:10px;padding:10px;background:var(--surface2);border-radius:6px;border-left:3px solid var(--blue);">
+          <div style="color:var(--blue);font-weight:700;">Class A Private</div>
+          <div style="font-family:'JetBrains Mono',monospace;">10.0.0.0 – 10.255.255.255</div>
+          <div style="color:var(--text-dim);font-size:0.8rem;">16,777,216 addresses</div>
+        </div>
+        <div style="margin-bottom:10px;padding:10px;background:var(--surface2);border-radius:6px;border-left:3px solid var(--green);">
+          <div style="color:var(--green);font-weight:700;">Class B Private</div>
+          <div style="font-family:'JetBrains Mono',monospace;">172.16.0.0 – 172.31.255.255</div>
+          <div style="color:var(--text-dim);font-size:0.8rem;">1,048,576 addresses</div>
+        </div>
+        <div style="padding:10px;background:var(--surface2);border-radius:6px;border-left:3px solid var(--yellow);">
+          <div style="color:var(--yellow);font-weight:700;">Class C Private</div>
+          <div style="font-family:'JetBrains Mono',monospace;">192.168.0.0 – 192.168.255.255</div>
+          <div style="color:var(--text-dim);font-size:0.8rem;">65,536 addresses</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 9: SUBNETTING ==================== -->
+<section class="section" id="s9">
+  <div class="sec-title">// 09 — Subnetting Lab</div>
+  <div class="sec-sub">Visual, interactive, step-by-step subnetting</div>
+
+  <!-- Bit Visualizer -->
+  <div class="card">
+    <div class="card-title">IPv4 = 32 Bits — Drag to Split</div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:0.85rem;color:var(--text-dim);">Network bits:</span>
+      <input type="range" id="net-bits" min="8" max="30" value="24" style="width:200px;" oninput="updateBitViz()">
+      <span id="net-bits-val" style="font-family:'Share Tech Mono',monospace;color:var(--blue);">/24</span>
+    </div>
+    <div id="bit-viz" style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:12px;"></div>
+    <div id="bit-stats" style="display:flex;gap:20px;flex-wrap:wrap;font-size:0.85rem;"></div>
+  </div>
+
+  <!-- Formulas -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Formula: Hosts per Subnet</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:1.4rem;text-align:center;padding:16px;background:var(--surface2);border-radius:8px;color:var(--green);margin-bottom:12px;">
+        2<sup>H</sup> − 2 = Hosts
+      </div>
+      <div id="host-formula-live" style="font-size:0.88rem;color:var(--text-dim);text-align:center;"></div>
+      <div style="margin-top:8px;font-size:0.8rem;color:var(--text-dim);">−2 because: Network address + Broadcast address are reserved</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Formula: Number of Subnets</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:1.4rem;text-align:center;padding:16px;background:var(--surface2);border-radius:8px;color:var(--yellow);margin-bottom:12px;">
+        2<sup>B</sup> = Subnets
+      </div>
+      <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:0.85rem;color:var(--text-dim);">Borrow bits:</span>
+        <input type="range" id="borrow-bits" min="1" max="6" value="2" style="width:160px;" oninput="updateBorrowBits()">
+        <span id="borrow-val" style="font-family:'Share Tech Mono',monospace;color:var(--yellow);">2 bits</span>
+      </div>
+      <div id="subnet-formula-live" style="font-size:0.88rem;color:var(--text-dim);text-align:center;"></div>
+    </div>
+  </div>
+
+  <!-- Step-by-step Example -->
+  <div class="card">
+    <div class="card-title">Guided Example: Divide 192.168.1.0/24 into 4 Subnets</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+      <button class="btn" id="step-btn-1" onclick="showSubStep(1)">Step 1</button>
+      <button class="btn" id="step-btn-2" onclick="showSubStep(2)">Step 2</button>
+      <button class="btn" id="step-btn-3" onclick="showSubStep(3)">Step 3</button>
+      <button class="btn" id="step-btn-4" onclick="showSubStep(4)">Step 4</button>
+      <button class="btn btn-green" id="step-btn-5" onclick="showSubStep(5)">Result</button>
+    </div>
+    <div id="sub-step-display" style="min-height:160px;"></div>
+  </div>
+
+  <!-- Subnet blocks -->
+  <div class="card" id="subnet-blocks-card" style="display:none;">
+    <div class="card-title">Subnet Ranges (192.168.1.0/24 ÷ 4)</div>
+    <div id="subnet-blocks" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;"></div>
+  </div>
+
+  <!-- Calculator -->
+  <div class="card">
+    <div class="card-title">⚡ Subnet Calculator</div>
+    <div class="inp-row" style="margin-bottom:12px;">
+      <input class="inp" id="calc-ip" value="192.168.10.0" style="width:170px;" placeholder="Network IP">
+      <input class="inp" id="calc-cidr" value="24" style="width:70px;" placeholder="CIDR">
+      <input class="inp" id="calc-subnets" value="4" style="width:100px;" placeholder="Subnets needed">
+      <button class="btn btn-green" onclick="runSubnetCalc()">Calculate</button>
+    </div>
+    <div id="calc-result" style="font-size:0.88rem;"></div>
+  </div>
+
+  <!-- Memory table -->
+  <div class="card">
+    <div class="card-title">Quick Reference Table</div>
+    <table class="table">
+      <tr><th>CIDR</th><th>Subnet Mask</th><th>Addresses</th><th>Usable Hosts</th><th>Subnets from /24</th></tr>
+      <tr><td>/24</td><td>255.255.255.0</td><td>256</td><td>254</td><td>1</td></tr>
+      <tr><td>/25</td><td>255.255.255.128</td><td>128</td><td>126</td><td>2</td></tr>
+      <tr><td>/26</td><td>255.255.255.192</td><td>64</td><td>62</td><td>4</td></tr>
+      <tr><td>/27</td><td>255.255.255.224</td><td>32</td><td>30</td><td>8</td></tr>
+      <tr><td>/28</td><td>255.255.255.240</td><td>16</td><td>14</td><td>16</td></tr>
+      <tr><td>/29</td><td>255.255.255.248</td><td>8</td><td>6</td><td>32</td></tr>
+      <tr><td>/30</td><td>255.255.255.252</td><td>4</td><td>2</td><td>64</td></tr>
+    </table>
+  </div>
+
+  <!-- Quiz -->
+  <div class="card">
+    <div class="card-title">🎮 Subnetting Quiz</div>
+    <div id="quiz-container"></div>
+    <div style="margin-top:12px;display:flex;gap:10px;">
+      <button class="btn" onclick="nextQuizQ()">Next Question →</button>
+      <span id="quiz-score" style="font-family:'Share Tech Mono',monospace;font-size:0.9rem;color:var(--green);align-self:center;"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 10: CIDR ==================== -->
+<section class="section" id="s10">
+  <div class="sec-title">// 10 — CIDR & Routing</div>
+  <div class="sec-sub">Classful vs Classless addressing, and how routing works</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Classful Addressing (Old Way)</div>
+      <div style="font-size:0.85rem;line-height:1.8;">
+        <div style="padding:10px;background:var(--surface2);border-radius:6px;margin-bottom:8px;border-left:3px solid var(--blue);">
+          <span style="color:var(--blue);font-weight:700;">Class A</span> — 1.x.x.x to 126.x.x.x<br>
+          <span style="color:var(--text-dim);">16M hosts, only 128 networks. Huge waste!</span>
+        </div>
+        <div style="padding:10px;background:var(--surface2);border-radius:6px;margin-bottom:8px;border-left:3px solid var(--green);">
+          <span style="color:var(--green);font-weight:700;">Class B</span> — 128.x.x.x to 191.x.x.x<br>
+          <span style="color:var(--text-dim);">65K hosts per network</span>
+        </div>
+        <div style="padding:10px;background:var(--surface2);border-radius:6px;border-left:3px solid var(--yellow);">
+          <span style="color:var(--yellow);font-weight:700;">Class C</span> — 192.x.x.x to 223.x.x.x<br>
+          <span style="color:var(--text-dim);">254 hosts, many networks</span>
+        </div>
+        <div style="margin-top:10px;padding:10px;background:rgba(255,51,102,0.08);border-radius:6px;border:1px solid var(--red-dim);">
+          ⚠️ Problem: A company needing 500 hosts must take a Class B (65K addresses) — wasting 64,000+ IPs!
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">CIDR — Classless Inter-Domain Routing</div>
+      <div style="font-size:0.85rem;line-height:1.8;">
+        <div style="padding:10px;background:rgba(0,255,136,0.08);border-radius:6px;border:1px solid var(--green-dim);margin-bottom:12px;">
+          ✅ CIDR lets you define ANY prefix length, eliminating waste and enabling flexible allocation.
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;padding:10px;background:var(--surface2);border-radius:6px;">
+          Need 500 hosts?<br>
+          Use /23 → 512 addresses, 510 usable<br><br>
+          Need 1000 hosts?<br>
+          Use /22 → 1024 addresses, 1022 usable<br><br>
+          Need exactly 30 hosts?<br>
+          Use /27 → 32 addresses, 30 usable ✓
+        </div>
+        <div style="margin-top:10px;color:var(--text-dim);">CIDR notation: IP/<span style="color:var(--blue);">prefix-length</span> e.g. 192.168.1.0<span style="color:var(--blue);">/24</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Routing — How Packets Find Their Way</div>
+    <div class="grid-2">
+      <div>
+        <div style="color:var(--blue);font-weight:700;margin-bottom:8px;">Static Routing</div>
+        <div style="font-size:0.85rem;color:var(--text-dim);line-height:1.7;">
+          An admin manually enters routes.<br>
+          ✅ Simple, predictable, no CPU overhead<br>
+          ❌ Doesn't adapt to failures<br>
+          Used in: Small networks, last-resort routes
+        </div>
+        <div style="margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:0.78rem;background:var(--surface2);padding:8px;border-radius:4px;color:var(--cyan);">
+          ip route 10.0.0.0 255.0.0.0 192.168.1.1
+        </div>
+      </div>
+      <div>
+        <div style="color:var(--green);font-weight:700;margin-bottom:8px;">Dynamic Routing</div>
+        <div style="font-size:0.85rem;color:var(--text-dim);line-height:1.7;">
+          Routers share routes automatically.<br>
+          ✅ Adapts to network changes<br>
+          ❌ More complex, uses bandwidth<br>
+          Protocols: OSPF, BGP, RIP, EIGRP
+        </div>
+        <div style="margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:0.78rem;background:var(--surface2);padding:8px;border-radius:4px;color:var(--cyan);">
+          router ospf 1<br>network 10.0.0.0 area 0
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px;">
+      <div class="card-title">Routing Table Example</div>
+      <table class="table">
+        <tr><th>Destination</th><th>Mask</th><th>Next Hop</th><th>Interface</th><th>Protocol</th></tr>
+        <tr><td>192.168.1.0</td><td>/24</td><td>Direct</td><td>eth0</td><td><span class="badge badge-blue">Connected</span></td></tr>
+        <tr><td>10.0.0.0</td><td>/8</td><td>192.168.1.1</td><td>eth1</td><td><span class="badge badge-green">OSPF</span></td></tr>
+        <tr><td>0.0.0.0</td><td>/0</td><td>203.0.113.1</td><td>eth2</td><td><span class="badge badge-yellow">Static</span></td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 11: SECURITY ==================== -->
+<section class="section" id="s11">
+  <div class="sec-title">// 11 — Network Security</div>
+  <div class="sec-sub">Devices and concepts that protect your network</div>
+
+  <div class="card">
+    <div class="card-title">Security Device Flow — Click a Device</div>
+    <div style="display:flex;align-items:center;justify-content:space-around;flex-wrap:wrap;gap:16px;padding:20px;background:var(--surface2);border-radius:8px;">
+      <div class="sec-device" onclick="showSecDevice('internet')">
+        <div class="sec-shield" style="background:rgba(255,51,102,0.1);border-color:var(--red);color:var(--red);">🌐</div>
+        <div style="font-size:0.72rem;font-family:'Share Tech Mono',monospace;color:var(--red);">INTERNET</div>
+      </div>
+      <div style="color:var(--red);font-size:1.2rem;">→</div>
+      <div class="sec-device" onclick="showSecDevice('firewall')">
+        <div class="sec-shield" style="background:rgba(255,136,0,0.1);border-color:var(--orange);color:var(--orange);">🔥</div>
+        <div style="font-size:0.72rem;font-family:'Share Tech Mono',monospace;color:var(--orange);">FIREWALL</div>
+      </div>
+      <div style="color:var(--yellow);font-size:1.2rem;">→</div>
+      <div class="sec-device" onclick="showSecDevice('proxy')">
+        <div class="sec-shield" style="background:rgba(170,85,255,0.1);border-color:var(--purple);color:var(--purple);">🔄</div>
+        <div style="font-size:0.72rem;font-family:'Share Tech Mono',monospace;color:var(--purple);">PROXY</div>
+      </div>
+      <div style="color:var(--blue);font-size:1.2rem;">→</div>
+      <div class="sec-device" onclick="showSecDevice('vpn')">
+        <div class="sec-shield" style="background:rgba(0,170,255,0.1);border-color:var(--blue);color:var(--blue);">🔒</div>
+        <div style="font-size:0.72rem;font-family:'Share Tech Mono',monospace;color:var(--blue);">VPN</div>
+      </div>
+      <div style="color:var(--green);font-size:1.2rem;">→</div>
+      <div class="sec-device" onclick="showSecDevice('lb')">
+        <div class="sec-shield" style="background:rgba(0,255,136,0.1);border-color:var(--green);color:var(--green);">⚖️</div>
+        <div style="font-size:0.72rem;font-family:'Share Tech Mono',monospace;color:var(--green);">LOAD BAL</div>
+      </div>
+      <div style="color:var(--green);font-size:1.2rem;">→</div>
+      <div class="sec-device" onclick="showSecDevice('server')">
+        <div class="sec-shield" style="background:rgba(0,255,136,0.1);border-color:var(--green);color:var(--green);">🖥️</div>
+        <div style="font-size:0.72rem;font-family:'Share Tech Mono',monospace;color:var(--green);">SERVERS</div>
+      </div>
+    </div>
+    <div id="sec-info" class="tooltip" style="display:none;margin-top:16px;"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Common Attacks</div>
+      <table class="table">
+        <tr><th>Attack</th><th>Description</th><th>Defense</th></tr>
+        <tr><td><span class="badge badge-red">DDoS</span></td><td>Flood server with traffic</td><td>Rate limiting, scrubbing</td></tr>
+        <tr><td><span class="badge badge-red">MITM</span></td><td>Intercept communications</td><td>TLS encryption, VPN</td></tr>
+        <tr><td><span class="badge badge-red">Phishing</span></td><td>Fake sites to steal data</td><td>DNS filtering, training</td></tr>
+        <tr><td><span class="badge badge-red">ARP Spoof</span></td><td>Fake ARP replies to redirect</td><td>DAI, VLANs</td></tr>
+        <tr><td><span class="badge badge-red">Port Scan</span></td><td>Discovery of open ports</td><td>Firewall rules</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Encryption Basics</div>
+      <div style="font-size:0.85rem;line-height:1.8;">
+        <div style="padding:10px;background:var(--surface2);border-radius:6px;margin-bottom:8px;border-left:3px solid var(--blue);">
+          <strong style="color:var(--blue);">HTTP</strong> — Plaintext, anyone can read it<br>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--red);">GET /login password=abc123</span>
+        </div>
+        <div style="padding:10px;background:var(--surface2);border-radius:6px;border-left:3px solid var(--green);">
+          <strong style="color:var(--green);">HTTPS (TLS)</strong> — Encrypted, safe<br>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--green);">TLSv1.3 [encrypted data] 🔒</span>
+        </div>
+        <div style="margin-top:12px;font-size:0.82rem;color:var(--text-dim);">
+          TLS uses <strong style="color:var(--cyan)">asymmetric</strong> (key exchange) then <strong style="color:var(--cyan)">symmetric</strong> (data) encryption. Port 443.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 12: FINAL SIMULATION ==================== -->
+<section class="section" id="s12">
+  <div class="sec-title">// 12 — Final Network Flow Simulation</div>
+  <div class="sec-sub">Complete journey: you → DNS → ARP → TCP → HTTP → Server → Response</div>
+
+  <div class="card">
+    <div class="inp-row" style="margin-bottom:16px;">
+      <input class="inp" id="final-domain" value="google.com" style="width:200px;" placeholder="Domain">
+      <button class="btn btn-green" id="final-btn" onclick="startFinalSim()">▶ Start Simulation</button>
+      <button class="btn" onclick="resetFinalSim()">↺ Reset</button>
+    </div>
+
+    <!-- Stage canvas -->
+    <div class="sim-stage" id="final-stage">
+      <!-- nodes injected by JS -->
+    </div>
+
+    <!-- Step tracker -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;" id="final-steps"></div>
+
+    <!-- Log -->
+    <div class="sim-log" id="final-log"></div>
+  </div>
+</section>
+
+<script>
+// ─────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────
+function showSection(id, btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ─────────────────────────────────────────────
+// SECTION 1: BASICS
+// ─────────────────────────────────────────────
+function showInfo(id, title, desc, ip, mac){
+  const el = document.getElementById('device-info');
+  el.innerHTML = `<div class="tooltip">
+    <strong>${title}</strong><br>${desc}<br>
+    <span style="color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:0.8rem;">IP: ${ip} | ${mac}</span>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────
+// SECTION 2: TYPES & TOPOLOGIES
+// ─────────────────────────────────────────────
+const netTypes = {
+  pan:{ name:'PAN — Personal Area Network', color:'var(--blue)',
+    desc:'Range ~10m. Connects personal devices like phone, laptop, earbuds via Bluetooth or USB. Example: Your phone and wireless headphones.',
+    examples:['📱 Smartphone','💻 Laptop','🎧 Earbuds','⌚ Smartwatch'] },
+  lan:{ name:'LAN — Local Area Network', color:'var(--green)',
+    desc:'Range ~100m-1km. Connects devices in a building or campus. Fast (1Gbps+). Example: School computer lab, home Wi-Fi.',
+    examples:['💻 PC 1','💻 PC 2','🖨️ Printer','🔀 Switch'] },
+  man:{ name:'MAN — Metropolitan Area Network', color:'var(--yellow)',
+    desc:'Range: A city. Connects multiple LANs across a city. Used by ISPs, universities, government. Speeds: 10-100 Mbps.',
+    examples:['🏢 Office 1','🏫 University','🏥 Hospital','🏛️ Government'] },
+  wan:{ name:'WAN — Wide Area Network', color:'var(--red)',
+    desc:'Range: Countries/World. The Internet is the largest WAN. Uses leased lines, fiber, satellites. Owned by ISPs.',
+    examples:['🇮🇳 India','🇺🇸 USA','🇬🇧 UK','🌐 Internet'] }
+};
+function showNetType(t){
+  const d=netTypes[t];
+  document.getElementById('nettype-display').innerHTML=`
+    <div style="color:${d.color};font-family:'Share Tech Mono',monospace;font-size:1.1rem;margin-bottom:8px;">${d.name}</div>
+    <div style="font-size:0.88rem;line-height:1.7;margin-bottom:12px;">${d.desc}</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">${d.examples.map(e=>`<span class="badge badge-blue">${e}</span>`).join('')}</div>`;
+}
+
+const topos = {
+  star:{
+    draw(svg){
+      const cx=300,cy=110,r=90;
+      svg.innerHTML=`
+        <circle cx="${cx}" cy="${cy}" r="22" fill="rgba(0,170,255,0.15)" stroke="#00aaff" stroke-width="2"/>
+        <text x="${cx}" y="${cy+6}" text-anchor="middle" fill="#00aaff" font-size="18">🔀</text>
+        ${[0,60,120,180,240,300].map((a,i)=>{
+          const x=cx+r*Math.cos(a*Math.PI/180),y=cy+r*Math.sin(a*Math.PI/180);
+          return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#1e3a5f" stroke-width="2"/>
+          <circle cx="${x}" cy="${y}" r="16" fill="rgba(0,255,136,0.1)" stroke="#00ff88" stroke-width="1.5"/>
+          <text x="${x}" y="${y+5}" text-anchor="middle" fill="#00ff88" font-size="13">💻</text>`;
+        }).join('')}
+        <text x="300" y="205" text-anchor="middle" fill="#5a7a9a" font-size="12">Central Hub/Switch</text>`;
+    },
+    info:'⭐ Star: All devices connect to a central switch. Easy to manage, one device failure doesn\'t affect others. Most common in modern LANs.'
+  },
+  bus:{
+    draw(svg){
+      svg.innerHTML=`
+        <line x1="50" y1="110" x2="550" y2="110" stroke="#ffcc00" stroke-width="3"/>
+        ${[80,170,260,350,440,530].map((x,i)=>`
+          <line x1="${x}" y1="110" x2="${x}" y2="${i%2===0?60:160}" stroke="#1e3a5f" stroke-width="2"/>
+          <circle cx="${x}" cy="${i%2===0?50:170}" r="16" fill="rgba(255,204,0,0.1)" stroke="#ffcc00" stroke-width="1.5"/>
+          <text x="${x}" y="${i%2===0?55:175}" text-anchor="middle" fill="#ffcc00" font-size="13">💻</text>`).join('')}
+        <text x="300" y="205" text-anchor="middle" fill="#5a7a9a" font-size="12">Shared Bus (Backbone Cable)</text>`;
+    },
+    info:'🚌 Bus: All devices share a single cable. Simple but a cable break kills the network. Old and rarely used now.'
+  },
+  ring:{
+    draw(svg){
+      const nodes=6,cx=300,cy=110,r=85;
+      let lines='',circles='';
+      for(let i=0;i<nodes;i++){
+        const a1=(i/nodes)*2*Math.PI-Math.PI/2,a2=((i+1)/nodes)*2*Math.PI-Math.PI/2;
+        const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
+        const x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);
+        lines+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#aa55ff" stroke-width="2"/>`;
+        circles+=`<circle cx="${x1}" cy="${y1}" r="15" fill="rgba(170,85,255,0.1)" stroke="#aa55ff" stroke-width="1.5"/>
+          <text x="${x1}" y="${y1+5}" text-anchor="middle" fill="#aa55ff" font-size="13">💻</text>`;
+      }
+      svg.innerHTML=lines+circles+`<text x="300" y="205" text-anchor="middle" fill="#5a7a9a" font-size="12">Token Ring (Data flows in one direction)</text>`;
+    },
+    info:'⭕ Ring: Data travels in a circle. Predictable but a single break stops all communication. Used in fiber rings.'
+  },
+  mesh:{
+    draw(svg){
+      const pts=[[150,60],[450,60],[100,160],[300,170],[500,160],[300,100]];
+      let lines='',circles='';
+      for(let i=0;i<pts.length;i++)
+        for(let j=i+1;j<pts.length;j++)
+          lines+=`<line x1="${pts[i][0]}" y1="${pts[i][1]}" x2="${pts[j][0]}" y2="${pts[j][1]}" stroke="#00ffee" stroke-width="1" opacity="0.4"/>`;
+      pts.forEach(([x,y])=>{
+        circles+=`<circle cx="${x}" cy="${y}" r="16" fill="rgba(0,255,238,0.1)" stroke="#00ffee" stroke-width="1.5"/>
+          <text x="${x}" y="${y+5}" text-anchor="middle" fill="#00ffee" font-size="13">💻</text>`;
+      });
+      svg.innerHTML=lines+circles+`<text x="300" y="205" text-anchor="middle" fill="#5a7a9a" font-size="12">Full Mesh (Every device connected to every other)</text>`;
+    },
+    info:'🕸️ Mesh: Every device connects to every other. Extremely reliable — multiple paths. Expensive. Used in Internet backbone.'
+  }
+};
+function showTopo(t){
+  const svg=document.getElementById('topo-svg');
+  topos[t].draw(svg);
+  document.getElementById('topo-info').textContent=topos[t].info;
+}
+
+// ─────────────────────────────────────────────
+// SECTION 3: DEVICES
+// ─────────────────────────────────────────────
+const deviceInfo={
+  hub:'A hub sends data to ALL connected devices (broadcasts). No intelligence — like shouting in a room. Creates collisions. Obsolete.',
+  switch:'A switch learns MAC addresses and sends data ONLY to the correct device. Smarter than hub, no collisions. Backbone of LANs.',
+  router:'Routes packets between different networks using IP addresses. Connects your home to the Internet. Contains routing tables.',
+  firewall:'Inspects packets and blocks unauthorized traffic based on rules. Can be hardware or software. First line of defense.',
+  modem:'Modulator-Demodulator. Converts digital signals ↔ analog (phone/cable). Connects your LAN to your ISP.'
+};
+
+function showDevice(el, type){
+  document.querySelectorAll('.proto-step').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(type+'-desc').textContent = deviceInfo[type];
+}
+
+// Packet animation
+let packetRunning=false;
+function animatePacket(){
+  if(packetRunning)return;
+  packetRunning=true;
+  const stages=[
+    {text:'Sending frame to switch...', color:'var(--blue)'},
+    {text:'Switch forwards to router...', color:'var(--yellow)'},
+    {text:'Router routes to internet...', color:'var(--green)'},
+    {text:'Packet reaches server! ✓', color:'var(--cyan)'}
+  ];
+  let i=0;
+  const status=document.getElementById('flow-status');
+  const iv=setInterval(()=>{
+    if(i>=stages.length){clearInterval(iv);packetRunning=false;return;}
+    status.style.color=stages[i].color;
+    status.textContent=stages[i].text;
+    i++;
+  },800);
+}
+function resetPacket(){
+  document.getElementById('flow-status').textContent='';
+  packetRunning=false;
+}
+
+// ─────────────────────────────────────────────
+// SECTION 4: PROTOCOL FLOW
+// ─────────────────────────────────────────────
+const protoExplain={
+  1:`<strong style="color:var(--blue)">DNS — Domain Name System</strong><br><br>
+Your browser doesn't know where "example.com" is. It asks a DNS server (like Google's 8.8.8.8) to translate the domain name into an IP address.<br><br>
+Protocol: <strong>UDP</strong> on port 53 (fast, no connection needed)<br>
+Types: A record (IPv4), AAAA (IPv6), MX (email), CNAME (alias)`,
+
+  2:`<strong style="color:var(--yellow)">ARP — Address Resolution Protocol</strong><br><br>
+Your computer knows the router's IP (192.168.1.1) but needs its MAC address to send frames on the local network.<br><br>
+ARP broadcasts "Who has 192.168.1.1?" and the router replies with its MAC.<br>
+This MAC is cached in the ARP table for future use.`,
+
+  3:`<strong style="color:var(--green)">TCP 3-Way Handshake</strong><br><br>
+Before sending any data, TCP establishes a reliable connection:<br>
+1. <strong>SYN</strong> — "I want to connect, my sequence # is X"<br>
+2. <strong>SYN-ACK</strong> — "OK! My sequence # is Y, acknowledging X+1"<br>
+3. <strong>ACK</strong> — "Acknowledged Y+1. Connection established!"<br><br>
+This ensures both sides are ready and synchronized.`,
+
+  4:`<strong style="color:var(--purple)">HTTP — HyperText Transfer Protocol</strong><br><br>
+Browser sends a GET request to the server asking for the web page.<br>
+Modern sites use <strong style="color:var(--green)">HTTPS</strong> (HTTP + TLS encryption) on port 443.<br><br>
+Methods: GET (fetch), POST (send data), PUT (update), DELETE`,
+
+  5:`<strong style="color:var(--cyan)">HTTP Response</strong><br><br>
+Server responds with a status code and the page content:<br>
+<strong>200 OK</strong> — Success ✅<br>
+<strong>404 Not Found</strong> — Page missing ❌<br>
+<strong>500 Internal Server Error</strong> — Server crashed 💥<br>
+<strong>301 Redirect</strong> — Moved permanently →<br><br>
+Content includes HTML, CSS, JS which your browser renders.`
+};
+
+let protoAutoTimer=null;
+let protoStep=0;
+
+function startProtoSim(){
+  const domain=document.getElementById('proto-domain').value||'example.com';
+  document.getElementById('ps1-domain').textContent=domain;
+  document.getElementById('ps1-domain2').textContent=domain;
+  document.getElementById('ps4-domain').textContent=domain;
+  resetProto();
+  protoStep=0;
+  protoAutoTimer=setInterval(()=>{
+    protoStep++;
+    if(protoStep>5){clearInterval(protoAutoTimer);return;}
+    activateProtoStep(protoStep);
+  },1500);
+}
+
+function activateProtoStep(n){
+  clearInterval(protoAutoTimer);
+  for(let i=1;i<=5;i++){
+    const el=document.getElementById('ps'+i);
+    el.classList.toggle('active',i===n);
+  }
+  document.getElementById('proto-explain').innerHTML=protoExplain[n]||'';
+}
+
+function resetProto(){
+  clearInterval(protoAutoTimer);
+  for(let i=1;i<=5;i++) document.getElementById('ps'+i).classList.remove('active');
+  document.getElementById('proto-explain').innerHTML='Click a step or press Simulate to begin.';
+}
+
+// ─────────────────────────────────────────────
+// SECTION 5: OSI
+// ─────────────────────────────────────────────
+const osiLayers=[
+  {n:7,name:'Application',fn:'User-facing services',eg:'HTTP, HTTPS, FTP, SMTP, DNS',color:'#ff6688',unit:'Data',real:'Your browser, email client'},
+  {n:6,name:'Presentation',fn:'Encryption, compression, format',eg:'SSL/TLS, JPEG, ASCII',color:'#ff8844',unit:'Data',real:'HTTPS encryption, file formats'},
+  {n:5,name:'Session',fn:'Manages sessions/connections',eg:'NetBIOS, RPC, SQL sessions',color:'#ffcc00',unit:'Data',real:'Login sessions, video calls'},
+  {n:4,name:'Transport',fn:'End-to-end delivery, port numbers',eg:'TCP, UDP',color:'#44ff88',unit:'Segment (TCP) / Datagram (UDP)',real:'Port 80, 443, 53'},
+  {n:3,name:'Network',fn:'Logical addressing, routing',eg:'IP, ICMP, OSPF',color:'#00aaff',unit:'Packet',real:'IP addresses, routers'},
+  {n:2,name:'Data Link',fn:'MAC addressing, framing',eg:'Ethernet, Wi-Fi, ARP',color:'#aa55ff',unit:'Frame',real:'MAC addresses, switches'},
+  {n:1,name:'Physical',fn:'Bits over wire/air',eg:'Cat6, Fiber, Wi-Fi 802.11',color:'#888888',unit:'Bits',real:'Cables, radio waves, pins'}
+];
+
+function buildOSI(){
+  const el=document.getElementById('osi-layers');
+  el.innerHTML=osiLayers.map(l=>`
+    <div class="osi-layer" style="background:rgba(0,0,0,0.2);color:${l.color};" onclick="showOSIDetail(${l.n})">
+      <div class="osi-num" style="background:${l.color}22;border:1px solid ${l.color};">${l.n}</div>
+      <div class="osi-info">
+        <div class="osi-name" style="color:${l.color};">${l.name}</div>
+        <div class="osi-fn">${l.fn}</div>
+      </div>
+      <div class="osi-eg" style="color:${l.color};opacity:0.7;">${l.eg.split(',')[0]}</div>
+    </div>`).join('');
+}
+buildOSI();
+
+function showOSIDetail(n){
+  const l=osiLayers.find(x=>x.n===n);
+  document.querySelectorAll('.osi-layer').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.osi-layer')[7-n].classList.add('active');
+  document.getElementById('osi-detail').innerHTML=`
+    <div style="color:${l.color};font-size:1.2rem;font-weight:700;margin-bottom:8px;">Layer ${l.n}: ${l.name}</div>
+    <strong>Function:</strong> ${l.fn}<br>
+    <strong>Protocols:</strong> ${l.eg}<br>
+    <strong>Real Example:</strong> ${l.real}<br>
+    <div style="margin-top:8px;">
+      <strong>PDU (Data Unit):</strong> <span class="badge badge-blue">${l.unit}</span>
+    </div>`;
+  document.getElementById('osi-data-unit').innerHTML=`
+    <div style="color:${l.color};">Layer ${n} data unit: <strong>${l.unit}</strong></div>`;
+}
+
+// ─────────────────────────────────────────────
+// SECTION 6: TCP/IP
+// ─────────────────────────────────────────────
+const tcpipLayers=[
+  {name:'Application', osi:[7,6,5], color:'#ff6688', protocols:'HTTP, FTP, SMTP, DNS, SSH'},
+  {name:'Transport',   osi:[4],     color:'#44ff88', protocols:'TCP, UDP'},
+  {name:'Internet',    osi:[3],     color:'#00aaff', protocols:'IP, ICMP, ARP'},
+  {name:'Network Access',osi:[2,1], color:'#aa55ff', protocols:'Ethernet, Wi-Fi, MAC'}
+];
+
+function buildTCPIP(){
+  const om=document.getElementById('osi-map');
+  const tm=document.getElementById('tcpip-map');
+  om.innerHTML=osiLayers.map(l=>`
+    <div style="padding:7px 12px;background:${l.color}18;border:1px solid ${l.color}55;border-radius:4px;margin-bottom:4px;
+      font-family:'Share Tech Mono',monospace;font-size:0.8rem;color:${l.color};cursor:pointer;"
+      onclick="showTCPDetail(${l.n})">
+      ${l.n}. ${l.name}
+    </div>`).join('');
+  tm.innerHTML=tcpipLayers.map((l,i)=>`
+    <div style="padding:${12+i*2}px 12px;background:${l.color}18;border:2px solid ${l.color};border-radius:4px;margin-bottom:8px;
+      font-family:'Share Tech Mono',monospace;font-size:0.85rem;color:${l.color};cursor:pointer;text-align:center;"
+      onclick="showTCPIPLayer(${i})">
+      ${l.name}
+    </div>`).join('');
+
+  // Encapsulation
+  const ec=document.getElementById('encap-layers');
+  ec.innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      ${[
+        {label:'APPLICATION DATA',bg:'#ff6688',inner:'HTTP request bytes'},
+        {label:'+ TCP HEADER → SEGMENT',bg:'#44ff88',inner:'Source/Dest Port, Seq#, Flags'},
+        {label:'+ IP HEADER → PACKET',bg:'#00aaff',inner:'Source/Dest IP, TTL, Protocol'},
+        {label:'+ ETHERNET HEADER/TRAILER → FRAME',bg:'#aa55ff',inner:'MAC addresses, FCS checksum'},
+        {label:'→ BITS on the wire',bg:'#555',inner:'01001101 00110010...'}
+      ].map((e,i)=>`
+        <div style="padding:8px 12px;background:${e.bg}18;border-left:3px solid ${e.bg};border-radius:4px;
+          font-family:'Share Tech Mono',monospace;font-size:0.8rem;color:${e.bg};">
+          ${e.label}
+          <div style="color:var(--text-dim);font-size:0.72rem;margin-top:2px;">${e.inner}</div>
+        </div>`).join('')}
+    </div>`;
+}
+buildTCPIP();
+
+function showTCPIPLayer(i){
+  const l=tcpipLayers[i];
+  document.getElementById('tcpip-detail').innerHTML=`
+    <strong style="color:${l.color};">TCP/IP ${l.name} Layer</strong><br>
+    Maps to OSI layers: ${l.osi.map(n=>`<span class="badge badge-blue">L${n}</span>`).join(' ')}<br>
+    Protocols: <strong>${l.protocols}</strong>`;
+}
+function showTCPDetail(n){
+  const l=osiLayers.find(x=>x.n===n);
+  document.getElementById('tcpip-detail').innerHTML=`<strong style="color:${l.color};">OSI Layer ${n}: ${l.name}</strong> — ${l.fn}<br>Protocols: ${l.eg}`;
+}
+
+// ─────────────────────────────────────────────
+// SECTION 7: TCP vs UDP / HANDSHAKE
+// ─────────────────────────────────────────────
+let hsStep=0;
+const hsSteps=[
+  {from:'client',label:'SYN',color:'var(--blue)',desc:'Client initiates: "I want to connect. My sequence number is 100."'},
+  {from:'server',label:'SYN-ACK',color:'var(--green)',desc:'Server responds: "OK! My sequence is 200. Acknowledging your 101."'},
+  {from:'client',label:'ACK',color:'var(--cyan)',desc:'Client confirms: "Acknowledged 201. Connection established! Ready to send data."'}
+];
+
+function animateHandshake(){
+  resetHandshake();
+  const cont=document.getElementById('handshake-arrows');
+  const explain=document.getElementById('handshake-explain');
+  let i=0;
+  const iv=setInterval(()=>{
+    if(i>=hsSteps.length){clearInterval(iv);explain.innerHTML='<span style="color:var(--green);">✅ Connection established! Data transfer can begin.</span>';return;}
+    const s=hsSteps[i];
+    const isClient=s.from==='client';
+    cont.innerHTML+=`
+      <div style="display:flex;align-items:center;gap:8px;animation:fadeIn 0.4s ease;">
+        ${isClient?'<div style="width:80px;"></div>':''}
+        <div style="flex:1;height:2px;background:${s.color};position:relative;">
+          <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);
+            font-family:\'Share Tech Mono\',monospace;font-size:0.8rem;color:${s.color};
+            background:var(--surface2);padding:2px 8px;border-radius:4px;border:1px solid ${s.color};white-space:nowrap;">
+            ${isClient?'→':''} ${s.label} ${!isClient?'←':''}
+          </div>
+        </div>
+        ${!isClient?'<div style="width:80px;"></div>':''}
+      </div>`;
+    explain.innerHTML=`<span style="color:${s.color};">Step ${i+1}: ${s.desc}</span>`;
+    i++;
+  },1000);
+}
+function resetHandshake(){
+  document.getElementById('handshake-arrows').innerHTML='';
+  document.getElementById('handshake-explain').textContent='';
+}
+
+// ─────────────────────────────────────────────
+// SECTION 8: IP ADDRESSING
+// ─────────────────────────────────────────────
+function analyzeIP(){
+  const ip=document.getElementById('ip-input').value.trim();
+  const parts=ip.split('.').map(Number);
+  if(parts.length!==4||parts.some(p=>isNaN(p)||p<0||p>255)){
+    document.getElementById('ip-result').innerHTML='<div class="tooltip" style="border-color:var(--red);color:var(--red);">❌ Invalid IP address</div>';
+    return;
+  }
+  const first=parts[0];
+  let cls,type,priv;
+  if(first===10||(first===172&&parts[1]>=16&&parts[1]<=31)||(first===192&&parts[1]===168)){priv=true;}
+  if(first<128){cls='A (0xxxxxxx)';type='Large networks';}
+  else if(first<192){cls='B (10xxxxxx)';type='Medium networks';}
+  else if(first<224){cls='C (110xxxxx)';type='Small networks';}
+  else{cls='D/E (Special)';type='Multicast / Reserved';}
+
+  const bins=parts.map(p=>p.toString(2).padStart(8,'0'));
+  document.getElementById('ip-result').innerHTML=`
+    <div class="tooltip">
+      <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+        ${parts.map((p,i)=>`
+          <div style="text-align:center;">
+            <div style="font-family:'Share Tech Mono',monospace;font-size:1rem;color:var(--blue);font-weight:700;">${p}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-dim);">${bins[i]}</div>
+            <div style="font-size:0.65rem;color:var(--text-dim);">Octet ${i+1}</div>
+          </div>
+          ${i<3?'<div style="align-self:center;color:var(--text-dim);">.</div>':''}`).join('')}
+      </div>
+      <strong>Class:</strong> ${cls} — ${type}<br>
+      <strong>Type:</strong> <span class="${priv?'badge badge-green':'badge badge-yellow'}">${priv?'Private (RFC1918)':'Public'}</span><br>
+      <strong>Binary:</strong> <span style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--cyan);">${bins.join('.')}</span><br>
+      <strong>Decimal:</strong> ${parts.reduce((a,b,i)=>a+(b<<(24-i*8)),0)}
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// SECTION 9: SUBNETTING
+// ─────────────────────────────────────────────
+function updateBitViz(){
+  const n=parseInt(document.getElementById('net-bits').value);
+  document.getElementById('net-bits-val').textContent='/'+n;
+  const bv=document.getElementById('bit-viz');
+  bv.innerHTML='';
+  for(let i=0;i<32;i++){
+    const box=document.createElement('div');
+    box.className='bit-box '+(i<n?'bit-network':'bit-host');
+    box.textContent=i<n?'N':'H';
+    if(i===7||i===15||i===23) box.style.marginRight='10px';
+    bv.appendChild(box);
+  }
+  const h=32-n;
+  const hosts=Math.pow(2,h)-2;
+  const bs=document.getElementById('bit-stats');
+  bs.innerHTML=`
+    <div><span style="color:var(--blue);">Network bits: <strong>${n}</strong></span></div>
+    <div><span style="color:var(--green);">Host bits: <strong>${h}</strong></span></div>
+    <div><span style="color:var(--yellow);">Usable hosts: <strong>${hosts>0?hosts:0}</strong></span></div>
+    <div><span style="color:var(--cyan);">Subnet mask: <strong>${cidrToMask(n)}</strong></span></div>`;
+  document.getElementById('host-formula-live').innerHTML=`2<sup>${h}</sup> − 2 = <strong style="color:var(--green);">${hosts>0?hosts:0} hosts</strong>`;
+}
+
+function updateBorrowBits(){
+  const b=parseInt(document.getElementById('borrow-bits').value);
+  document.getElementById('borrow-val').textContent=b+' bits';
+  const subnets=Math.pow(2,b);
+  document.getElementById('subnet-formula-live').innerHTML=`2<sup>${b}</sup> = <strong style="color:var(--yellow);">${subnets} subnets</strong>`;
+}
+
+function cidrToMask(cidr){
+  const mask=~(0xFFFFFFFF>>>cidr)>>>0;
+  return [(mask>>>24)&255,(mask>>>16)&255,(mask>>>8)&255,mask&255].join('.');
+}
+
+updateBitViz();
+updateBorrowBits();
+
+// Step-by-step subnetting
+const subSteps=[
+  {
+    title:'Step 1 — Identify the Goal',
+    html:`<div style="font-size:0.9rem;line-height:1.8;">
+      <strong>Given:</strong> Network <span style="color:var(--cyan);font-family:'JetBrains Mono',monospace;">192.168.1.0/24</span><br>
+      <strong>Goal:</strong> Divide into <span style="color:var(--yellow);">4 subnets</span><br><br>
+      We need to find how many bits to "borrow" from the host portion.<br>
+      Formula: <strong style="color:var(--green);">2<sup>n</sup> ≥ required subnets</strong>
+    </div>`
+  },
+  {
+    title:'Step 2 — Find Borrowed Bits',
+    html:`<div style="font-size:0.9rem;line-height:1.8;">
+      We need at least 4 subnets:<br>
+      • 2<sup>1</sup> = 2 (not enough)<br>
+      • 2<sup>2</sup> = <strong style="color:var(--green);">4 ✓</strong><br><br>
+      <strong>Borrow n = <span style="color:var(--yellow);">2 bits</span></strong> from the host portion
+    </div>`
+  },
+  {
+    title:'Step 3 — Calculate New CIDR',
+    html:`<div style="font-size:0.9rem;line-height:1.8;">
+      Original: <span style="color:var(--blue);font-family:'JetBrains Mono',monospace;">/24</span> (24 network bits)<br>
+      Borrowed: <span style="color:var(--yellow);">2 bits</span><br>
+      New CIDR: <strong style="color:var(--green);font-size:1.2rem;">/26</strong> (24 + 2 = 26)<br><br>
+      New mask: <span style="color:var(--cyan);font-family:'JetBrains Mono',monospace;">255.255.255.192</span><br>
+      Host bits remaining: 32 − 26 = <strong style="color:var(--green);">6</strong>
+    </div>`
+  },
+  {
+    title:'Step 4 — Hosts per Subnet',
+    html:`<div style="font-size:0.9rem;line-height:1.8;">
+      Host bits = 6<br>
+      Total addresses: 2<sup>6</sup> = <strong>64</strong><br>
+      Usable hosts: 64 − 2 = <strong style="color:var(--green);font-size:1.2rem;">62 hosts per subnet</strong><br><br>
+      (Minus 1 for network address, minus 1 for broadcast)
+    </div>`
+  },
+  {
+    title:'Result — 4 Subnets Created!',
+    html:`<div id="subnet-blocks-inner"></div>`
+  }
+];
+
+function showSubStep(n){
+  const el=document.getElementById('sub-step-display');
+  el.innerHTML=`
+    <div class="tooltip">
+      <div style="color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:1rem;margin-bottom:10px;">${subSteps[n-1].title}</div>
+      ${subSteps[n-1].html}
+    </div>`;
+  if(n===5){
+    renderSubnetBlocks(document.getElementById('subnet-blocks-inner'));
+    document.getElementById('subnet-blocks-card').style.display='block';
+  }
+}
+
+function renderSubnetBlocks(container){
+  const subs=[
+    {n:1,net:'192.168.1.0',bcast:'192.168.1.63',range:'192.168.1.1 – 192.168.1.62',color:'var(--blue)'},
+    {n:2,net:'192.168.1.64',bcast:'192.168.1.127',range:'192.168.1.65 – 192.168.1.126',color:'var(--green)'},
+    {n:3,net:'192.168.1.128',bcast:'192.168.1.191',range:'192.168.1.129 – 192.168.1.190',color:'var(--yellow)'},
+    {n:4,net:'192.168.1.192',bcast:'192.168.1.255',range:'192.168.1.193 – 192.168.1.254',color:'var(--purple)'}
+  ];
+  if(!container) container=document.getElementById('subnet-blocks');
+  container.innerHTML=subs.map(s=>`
+    <div style="padding:12px;background:${s.color}11;border:1px solid ${s.color};border-radius:6px;
+      font-family:'JetBrains Mono',monospace;font-size:0.78rem;animation:fadeIn 0.4s ease;">
+      <div style="color:${s.color};font-weight:700;margin-bottom:6px;">Subnet ${s.n} /26</div>
+      <div>Network: ${s.net}</div>
+      <div>Broadcast: ${s.bcast}</div>
+      <div style="color:var(--text-dim);">Hosts: ${s.range}</div>
+      <div style="color:var(--green);">62 usable hosts</div>
+    </div>`).join('');
+}
+
+// Subnet calculator
+function runSubnetCalc(){
+  const ip=document.getElementById('calc-ip').value.trim();
+  const cidr=parseInt(document.getElementById('calc-cidr').value);
+  const needed=parseInt(document.getElementById('calc-subnets').value);
+  const res=document.getElementById('calc-result');
+
+  if(isNaN(cidr)||isNaN(needed)||cidr<1||cidr>30){
+    res.innerHTML='<div style="color:var(--red);">❌ Invalid input</div>';return;
+  }
+
+  let borrow=0;
+  while(Math.pow(2,borrow)<needed) borrow++;
+  const newCidr=cidr+borrow;
+  if(newCidr>30){res.innerHTML='<div style="color:var(--red);">❌ Not enough host bits to borrow</div>';return;}
+
+  const hostBits=32-newCidr;
+  const hosts=Math.pow(2,hostBits)-2;
+  const subnets=Math.pow(2,borrow);
+  const block=Math.pow(2,hostBits);
+
+  let table=`<table class="table" style="margin-top:8px;">
+    <tr><th>#</th><th>Network</th><th>Broadcast</th><th>Hosts</th></tr>`;
+  const parts=ip.split('.').map(Number);
+  const base=(parts[0]<<24)|(parts[1]<<16)|(parts[2]<<8)|parts[3];
+  for(let i=0;i<Math.min(subnets,16);i++){
+    const n=((base+(i*block))>>>0);
+    const nip=[n>>>24,(n>>>16)&255,(n>>>8)&255,n&255].join('.');
+    const b=((n+block-1)>>>0);
+    const bip=[b>>>24,(b>>>16)&255,(b>>>8)&255,b&255].join('.');
+    const colors=['var(--blue)','var(--green)','var(--yellow)','var(--purple)','var(--cyan)','var(--orange)'];
+    table+=`<tr style="color:${colors[i%colors.length]};font-family:'JetBrains Mono',monospace;font-size:0.78rem;">
+      <td>${i+1}</td><td>${nip}/${newCidr}</td><td>${bip}</td><td>${hosts}</td></tr>`;
+  }
+  if(subnets>16) table+=`<tr><td colspan="4" style="color:var(--text-dim);">...and ${subnets-16} more subnets</td></tr>`;
+  table+=`</table>`;
+
+  res.innerHTML=`
+    <div class="tooltip">
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px;">
+        <div>Borrow bits: <strong style="color:var(--yellow);">${borrow}</strong></div>
+        <div>New CIDR: <strong style="color:var(--blue);">/${newCidr}</strong></div>
+        <div>Subnets: <strong style="color:var(--green);">${subnets}</strong></div>
+        <div>Hosts/subnet: <strong style="color:var(--cyan);">${hosts}</strong></div>
+        <div>Mask: <strong style="color:var(--purple);">${cidrToMask(newCidr)}</strong></div>
+      </div>
+      ${table}
+    </div>`;
+}
+
+// Quiz
+const quizQs=[
+  {q:'How many usable hosts are in a /26 subnet?',opts:['62','64','30','126'],ans:0,exp:'2^6 - 2 = 62 hosts. /26 has 6 host bits.'},
+  {q:'You need 8 subnets from a /24. What borrowed bits?',opts:['2','3','4','1'],ans:1,exp:'2^3 = 8. Borrow 3 bits.'},
+  {q:'What is the subnet mask for /27?',opts:['255.255.255.192','255.255.255.224','255.255.255.240','255.255.255.128'],ans:1,exp:'/27 = 11100000 in last octet = 224'},
+  {q:'How many subnets does /24→/26 create?',opts:['2','4','8','16'],ans:1,exp:'Borrowed 2 bits. 2^2 = 4 subnets.'},
+  {q:'A /30 subnet has how many usable hosts?',opts:['6','4','2','30'],ans:2,exp:'2^2 - 2 = 2 hosts. Good for point-to-point links.'},
+  {q:'What CIDR gives exactly 14 usable hosts?',opts:['/26','/28','/27','/29'],ans:1,exp:'2^4 - 2 = 14. /28 has 4 host bits.'}
+];
+let qIdx=0,qScore=0,qAnswered=false;
+
+function renderQuiz(){
+  const q=quizQs[qIdx%quizQs.length];
+  document.getElementById('quiz-container').innerHTML=`
+    <div style="font-size:0.95rem;font-weight:700;margin-bottom:14px;color:var(--text);">
+      Q${(qIdx%quizQs.length)+1}: ${q.q}
+    </div>
+    ${q.opts.map((o,i)=>`<button class="quiz-opt" id="qopt${i}" onclick="answerQ(${i})">${o}</button>`).join('')}
+    <div id="q-feedback" style="margin-top:8px;font-size:0.85rem;"></div>`;
+  qAnswered=false;
+  document.getElementById('quiz-score').textContent=`Score: ${qScore}/${qIdx}`;
+}
+
+function answerQ(i){
+  if(qAnswered)return;
+  qAnswered=true;
+  const q=quizQs[qIdx%quizQs.length];
+  const correct=i===q.ans;
+  if(correct) qScore++;
+  document.querySelectorAll('.quiz-opt').forEach((b,j)=>{
+    if(j===q.ans) b.classList.add('correct');
+    else if(j===i&&!correct) b.classList.add('wrong');
+    b.disabled=true;
+  });
+  document.getElementById('q-feedback').innerHTML=`
+    <span style="color:${correct?'var(--green)':'var(--red)'};">${correct?'✅ Correct!':'❌ Wrong.'}</span>
+    ${q.exp}`;
+  document.getElementById('quiz-score').textContent=`Score: ${qScore}/${qIdx+1}`;
+}
+
+function nextQuizQ(){
+  qIdx++;
+  renderQuiz();
+}
+renderQuiz();
+
+// ─────────────────────────────────────────────
+// SECTION 11: SECURITY
+// ─────────────────────────────────────────────
+const secDevices={
+  internet:{name:'The Internet',color:'var(--red)',desc:'The public internet is untrusted. Data here can be intercepted, modified, or blocked. Always assume hostile!'},
+  firewall:{name:'Firewall',color:'var(--orange)',desc:'Inspects every packet. Allows or denies based on rules (port, IP, protocol). Stateful firewalls track connections. NGFWs do deep packet inspection.'},
+  proxy:{name:'Proxy Server',color:'var(--purple)',desc:'Acts as middleman between clients and internet. Caches content, filters requests, hides client IPs. Reverse proxies protect servers.'},
+  vpn:{name:'VPN — Virtual Private Network',color:'var(--blue)',desc:'Encrypts all traffic in a secure tunnel. Your ISP only sees encrypted data going to the VPN server. Used for privacy and remote work access.'},
+  lb:{name:'Load Balancer',color:'var(--green)',desc:'Distributes traffic across multiple servers for reliability and speed. Algorithms: Round Robin, Least Connections, IP Hash. Prevents single point of failure.'},
+  server:{name:'Web Servers',color:'var(--green)',desc:'Run in a DMZ (Demilitarized Zone) — a separate network segment. Isolated from internal network so a breach doesn\'t expose everything.'}
+};
+
+function showSecDevice(t){
+  const d=secDevices[t];
+  const el=document.getElementById('sec-info');
+  el.style.display='block';
+  el.style.borderColor=d.color;
+  el.innerHTML=`<strong style="color:${d.color}">${d.name}</strong><br>${d.desc}`;
+}
+
+// ─────────────────────────────────────────────
+// SECTION 12: FINAL SIMULATION
+// ─────────────────────────────────────────────
+const finalNodes=[
+  {id:'laptop', icon:'💻', label:'Your Laptop', x:3, y:40, color:'var(--blue)'},
+  {id:'router', icon:'🌐', label:'Router', x:18, y:40, color:'var(--yellow)'},
+  {id:'dns',    icon:'🗂️', label:'DNS Server', x:40, y:10, color:'var(--purple)'},
+  {id:'isp',    icon:'☁️', label:'ISP', x:50, y:40, color:'var(--text-dim)'},
+  {id:'server', icon:'🖥️', label:'Web Server', x:80, y:40, color:'var(--green)'}
+];
+
+function buildFinalStage(){
+  const stage=document.getElementById('final-stage');
+  stage.innerHTML='';
+  finalNodes.forEach(n=>{
+    const el=document.createElement('div');
+    el.className='sim-node';
+    el.id='fn-'+n.id;
+    el.style.cssText=`left:${n.x}%;top:${n.y}%;transform:translate(-50%,-50%);`;
+    el.innerHTML=`
+      <div class="sim-icon" style="background:${n.color}18;border-color:${n.color};color:${n.color};" id="fni-${n.id}">${n.icon}</div>
+      <div class="sim-label">${n.label}</div>`;
+    stage.appendChild(el);
+  });
+
+  // Draw static lines via SVG
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;';
+  svg.innerHTML=`
+    <line id="fl1" x1="3%" y1="40%" x2="18%" y2="40%" stroke="#1e3a5f" stroke-width="1.5"/>
+    <line id="fl2" x1="18%" y1="40%" x2="40%" y2="10%" stroke="#1e3a5f" stroke-width="1.5"/>
+    <line id="fl3" x1="18%" y1="40%" x2="50%" y2="40%" stroke="#1e3a5f" stroke-width="1.5"/>
+    <line id="fl4" x1="50%" y1="40%" x2="80%" y2="40%" stroke="#1e3a5f" stroke-width="1.5"/>`;
+  stage.insertBefore(svg,stage.firstChild);
+
+  // Steps
+  const stepDefs=[
+    {id:'fs1',label:'DNS Query',color:'var(--purple)'},
+    {id:'fs2',label:'ARP',color:'var(--yellow)'},
+    {id:'fs3',label:'TCP SYN',color:'var(--blue)'},
+    {id:'fs4',label:'TCP SYN-ACK',color:'var(--cyan)'},
+    {id:'fs5',label:'TCP ACK',color:'var(--blue)'},
+    {id:'fs6',label:'HTTP GET',color:'var(--green)'},
+    {id:'fs7',label:'HTTP 200',color:'var(--green)'}
+  ];
+  document.getElementById('final-steps').innerHTML=stepDefs.map(s=>`
+    <span id="${s.id}" style="padding:4px 10px;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:0.7rem;
+      border:1px solid var(--border);color:var(--text-dim);transition:all 0.3s;">${s.label}</span>`).join('');
+}
+buildFinalStage();
+
+let simRunning=false;
+function log(msg,cls='blue'){
+  const el=document.getElementById('final-log');
+  const div=document.createElement('div');
+  div.className='log-entry '+cls;
+  div.textContent='['+new Date().toLocaleTimeString()+'  ] '+msg;
+  el.appendChild(div);
+  el.scrollTop=el.scrollHeight;
+}
+
+async function startFinalSim(){
+  if(simRunning)return;
+  simRunning=true;
+  document.getElementById('final-btn').disabled=true;
+  const domain=document.getElementById('final-domain').value||'google.com';
+  document.getElementById('final-log').innerHTML='';
+
+  const steps=[
+    {step:'fs1',msg:`DNS Query: "What is the IP of ${domain}?"`,cls:'blue',from:'laptop',to:'dns'},
+    {step:'fs1',msg:'DNS Response: IP = 142.250.80.46',cls:'blue',from:'dns',to:'laptop'},
+    {step:'fs2',msg:'ARP Broadcast: "Who has 192.168.1.1?" (router MAC)',cls:'yellow',from:'laptop',to:'router'},
+    {step:'fs2',msg:'ARP Reply: Router MAC = AA:BB:CC:DD:EE:FF',cls:'yellow',from:'router',to:'laptop'},
+    {step:'fs3',msg:'TCP SYN → 142.250.80.46:443',cls:'blue',from:'laptop',to:'server'},
+    {step:'fs4',msg:'TCP SYN-ACK ← Server ready',cls:'cyan',from:'server',to:'laptop'},
+    {step:'fs5',msg:'TCP ACK → Connection established!',cls:'blue',from:'laptop',to:'server'},
+    {step:'fs6',msg:`HTTP GET / → ${domain} (HTTPS encrypted)`,cls:'green',from:'laptop',to:'server'},
+    {step:'fs7',msg:'HTTP 200 OK ← Page received! Rendering... ✓',cls:'green',from:'server',to:'laptop'}
+  ];
+
+  for(let i=0;i<steps.length;i++){
+    const s=steps[i];
+    document.querySelectorAll('[id^="fs"]').forEach(e=>e.style.cssText+=';color:var(--text-dim);background:none;');
+    const stepEl=document.getElementById(s.step);
+    if(stepEl){stepEl.style.cssText+=`;color:${s.cls==='blue'?'var(--blue)':s.cls==='green'?'var(--green)':s.cls==='yellow'?'var(--yellow)':'var(--cyan)'};background:rgba(0,0,0,0.3);border-color:currentColor;`;}
+    pulseNode(s.from); pulseNode(s.to);
+    log(s.msg,s.cls);
+    await sleep(1200);
+  }
+  log('✅ Complete! Page fully loaded in your browser.',s.cls='green');
+  simRunning=false;
+  document.getElementById('final-btn').disabled=false;
+}
+
+function pulseNode(id){
+  const el=document.getElementById('fni-'+id);
+  if(!el)return;
+  el.style.transform='scale(1.2)';
+  el.style.boxShadow='0 0 20px currentColor';
+  setTimeout(()=>{el.style.transform='';el.style.boxShadow='';},600);
+}
+
+function resetFinalSim(){
+  simRunning=false;
+  document.getElementById('final-btn').disabled=false;
+  document.getElementById('final-log').innerHTML='';
+  document.querySelectorAll('[id^="fs"]').forEach(e=>{
+    e.style.color='var(--text-dim)';e.style.background='none';e.style.borderColor='var(--border)';
+  });
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ─────────────────────────────────────────────
+// INIT slider style
+// ─────────────────────────────────────────────
+document.querySelectorAll('input[type=range]').forEach(r=>{
+  r.addEventListener('input',function(){
+    const pct=((this.value-this.min)/(this.max-this.min)*100)+'%';
+    this.style.setProperty('--pct',pct);
+  });
+  r.dispatchEvent(new Event('input'));
+});
+</script>
+</body>
+</html>
