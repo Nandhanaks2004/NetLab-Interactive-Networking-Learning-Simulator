@@ -1,0 +1,2817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetSec Academy — Interactive Networking Lab</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:wght@300;400;600;800&display=swap');
+
+:root {
+  --bg-primary: #050a14;
+  --bg-secondary: #080f1e;
+  --bg-card: #0a1628;
+  --bg-card2: #0d1c35;
+  --accent-cyan: #00d4ff;
+  --accent-blue: #0080ff;
+  --accent-green: #00ff88;
+  --accent-orange: #ff6b35;
+  --accent-red: #ff3355;
+  --accent-purple: #7c3aed;
+  --text-primary: #e8f4fd;
+  --text-secondary: #8ab4d4;
+  --text-dim: #4a6fa5;
+  --border: #1a3a5c;
+  --border-glow: #00d4ff33;
+  --glow-cyan: 0 0 20px #00d4ff44;
+  --glow-green: 0 0 20px #00ff8844;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-head: 'Exo 2', sans-serif;
+  --font-body: 'Rajdhani', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  overflow-x: hidden;
+}
+
+/* Scanline overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,255,0.01) 2px, rgba(0,212,255,0.01) 4px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ===== HEADER ===== */
+header {
+  background: linear-gradient(135deg, #050a14 0%, #080f1e 50%, #0a1628 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 30px rgba(0,212,255,0.1);
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  font-family: var(--font-head);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--accent-cyan);
+  letter-spacing: 2px;
+  text-shadow: var(--glow-cyan);
+}
+
+.logo span { color: var(--accent-green); }
+
+.progress-bar-container {
+  flex: 1;
+  max-width: 400px;
+  margin: 0 24px;
+}
+
+.progress-label { font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 4px; font-family: var(--font-mono); }
+
+.progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan), var(--accent-green));
+  width: 0%;
+  transition: width 0.6s ease;
+  box-shadow: 0 0 10px var(--accent-cyan);
+}
+
+.status-badge {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent-green);
+  border: 1px solid var(--accent-green);
+  padding: 4px 10px;
+  border-radius: 2px;
+  animation: blink 2s infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+/* ===== NAV TABS ===== */
+.nav-tabs {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 16px;
+  gap: 2px;
+}
+
+.nav-tabs::-webkit-scrollbar { display: none; }
+
+.nav-tab {
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s;
+  letter-spacing: 0.5px;
+}
+
+.nav-tab:hover { color: var(--text-secondary); border-bottom-color: var(--border); }
+.nav-tab.active { color: var(--accent-cyan); border-bottom-color: var(--accent-cyan); text-shadow: var(--glow-cyan); }
+
+/* ===== MAIN LAYOUT ===== */
+main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+.section { display: none; animation: fadeIn 0.4s ease; }
+.section.active { display: block; }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* ===== SECTION TITLES ===== */
+.section-title {
+  font-family: var(--font-head);
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.section-subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-bottom: 32px;
+  font-family: var(--font-mono);
+}
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.card:hover { border-color: var(--border-glow); box-shadow: 0 0 20px rgba(0,212,255,0.08); }
+
+.card-title {
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ===== OSI LAYERS ===== */
+.osi-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.osi-layer {
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: grid;
+  grid-template-columns: 40px 80px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.osi-layer:hover { border-color: var(--accent-cyan); transform: translateX(4px); }
+.osi-layer.expanded { border-color: var(--accent-blue); box-shadow: var(--glow-cyan); }
+
+.layer-num {
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.layer-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+}
+
+.layer-brief {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.layer-details {
+  display: none;
+  grid-column: 1 / -1;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  animation: fadeIn 0.3s ease;
+}
+
+.layer-details.visible { display: block; }
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.detail-box {
+  background: var(--bg-primary);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+
+.detail-box label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.detail-box span {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+/* Layer colors */
+.l7 { border-left: 3px solid #ff6b35; }
+.l7 .layer-num { color: #ff6b35; }
+.l6 { border-left: 3px solid #ff9f1c; }
+.l6 .layer-num { color: #ff9f1c; }
+.l5 { border-left: 3px solid #ffdd00; }
+.l5 .layer-num { color: #ffdd00; }
+.l4 { border-left: 3px solid #00ff88; }
+.l4 .layer-num { color: #00ff88; }
+.l3 { border-left: 3px solid #00d4ff; }
+.l3 .layer-num { color: #00d4ff; }
+.l2 { border-left: 3px solid #0080ff; }
+.l2 .layer-num { color: #0080ff; }
+.l1 { border-left: 3px solid #7c3aed; }
+.l1 .layer-num { color: #7c3aed; }
+
+/* ===== ENCAPSULATION FLOW ===== */
+.encap-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px;
+}
+
+.encap-layer {
+  border-radius: 4px;
+  padding: 10px 16px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  opacity: 0.3;
+  transition: all 0.5s ease;
+  text-align: center;
+}
+
+.encap-layer.active { opacity: 1; transform: scale(1.02); }
+
+/* ===== TCP HANDSHAKE ===== */
+.handshake-diagram {
+  display: grid;
+  grid-template-columns: 1fr 60px 1fr;
+  align-items: start;
+  gap: 0;
+  min-height: 240px;
+}
+
+.hs-entity {
+  text-align: center;
+  padding: 16px;
+}
+
+.hs-entity-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.hs-entity-name {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--accent-cyan);
+}
+
+.hs-entity-ip {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.hs-arrows {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 60px;
+}
+
+.hs-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  opacity: 0.2;
+  transition: all 0.5s ease;
+}
+
+.hs-arrow.active { opacity: 1; }
+
+.hs-arrow-line {
+  height: 2px;
+  flex: 1;
+  position: relative;
+}
+
+.hs-arrow-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent-green);
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: var(--bg-card);
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--accent-green);
+}
+
+.arrow-right .hs-arrow-line {
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+}
+
+.arrow-right .hs-arrow-line::after {
+  content: '▶';
+  position: absolute;
+  right: -8px;
+  top: -8px;
+  color: var(--accent-cyan);
+  font-size: 0.9rem;
+}
+
+.arrow-left .hs-arrow-line {
+  background: linear-gradient(270deg, var(--accent-blue), var(--accent-cyan));
+}
+
+.arrow-left .hs-arrow-line::before {
+  content: '◀';
+  position: absolute;
+  left: -8px;
+  top: -8px;
+  color: var(--accent-cyan);
+  font-size: 0.9rem;
+}
+
+.hs-steps {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+  padding: 10px 20px;
+  border: 1px solid var(--accent-cyan);
+  background: transparent;
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.3s;
+  letter-spacing: 0.5px;
+}
+
+.btn:hover { background: var(--accent-cyan); color: var(--bg-primary); box-shadow: var(--glow-cyan); }
+
+.btn-green { border-color: var(--accent-green); color: var(--accent-green); }
+.btn-green:hover { background: var(--accent-green); color: var(--bg-primary); box-shadow: var(--glow-green); }
+
+.btn-orange { border-color: var(--accent-orange); color: var(--accent-orange); }
+.btn-orange:hover { background: var(--accent-orange); color: var(--bg-primary); }
+
+.btn-red { border-color: var(--accent-red); color: var(--accent-red); }
+.btn-red:hover { background: var(--accent-red); color: white; }
+
+.btn-sm { padding: 6px 14px; font-size: 0.8rem; }
+
+.btn.active-step { background: var(--accent-cyan); color: var(--bg-primary); }
+
+/* ===== EXPLANATION BOX ===== */
+.explanation-box {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 4px;
+  padding: 16px;
+  margin-top: 16px;
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.explanation-box.visible { display: block; }
+
+.explanation-box.green { border-left-color: var(--accent-green); }
+.explanation-box.orange { border-left-color: var(--accent-orange); }
+.explanation-box.red { border-left-color: var(--accent-red); }
+
+/* ===== TABLES ===== */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.data-table th {
+  background: var(--bg-primary);
+  color: var(--accent-cyan);
+  padding: 10px 14px;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--border);
+}
+
+.data-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+
+.data-table tr:hover td { background: var(--bg-card2); }
+
+.data-table .highlight { color: var(--accent-green); font-family: var(--font-mono); }
+.data-table .network { color: var(--accent-blue); font-family: var(--font-mono); }
+.data-table .broadcast { color: var(--accent-orange); font-family: var(--font-mono); }
+
+/* ===== SUBNET VISUALIZER ===== */
+.subnet-visual {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.subnet-block {
+  border-radius: 6px;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s;
+}
+
+.subnet-block:hover { transform: translateX(4px); }
+
+.subnet-block-s1 { border-left: 4px solid #00ff88; }
+.subnet-block-s2 { border-left: 4px solid #00d4ff; }
+.subnet-block-s3 { border-left: 4px solid #0080ff; }
+.subnet-block-s4 { border-left: 4px solid #7c3aed; }
+.subnet-block-s5 { border-left: 4px solid #ff9f1c; }
+.subnet-block-s6 { border-left: 4px solid #ff6b35; }
+.subnet-block-s7 { border-left: 4px solid #ff3355; }
+.subnet-block-s8 { border-left: 4px solid #ffdd00; }
+
+/* ===== SLIDER ===== */
+.slider-container { padding: 10px 0; }
+
+.cidr-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.cidr-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--accent-cyan);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--accent-cyan);
+}
+
+.bit-display {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+
+.bit-box {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  border-radius: 3px;
+  transition: all 0.3s;
+}
+
+.bit-net { background: #0d2244; border: 1px solid var(--accent-blue); color: var(--accent-blue); }
+.bit-host { background: #0d2d1a; border: 1px solid var(--accent-green); color: var(--accent-green); }
+.bit-sep { background: transparent; border: none; color: var(--text-dim); width: 8px; }
+
+/* ===== INPUTS ===== */
+.input-group { display: grid; gap: 12px; margin: 16px 0; }
+.input-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+.styled-input {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.styled-input:focus { border-color: var(--accent-cyan); box-shadow: 0 0 8px rgba(0,212,255,0.2); }
+.styled-input::placeholder { color: var(--text-dim); }
+
+.input-label {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  min-width: 100px;
+}
+
+/* ===== ARP ANIMATION ===== */
+.arp-canvas {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+  position: relative;
+  min-height: 160px;
+  overflow: hidden;
+}
+
+.arp-device {
+  text-align: center;
+  width: 80px;
+}
+
+.arp-icon { font-size: 2rem; }
+.arp-label { font-size: 0.7rem; font-family: var(--font-mono); color: var(--text-secondary); }
+.arp-ip { font-size: 0.75rem; font-family: var(--font-mono); color: var(--accent-cyan); }
+
+.arp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 20px 0;
+}
+
+.arp-msg {
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: all 0.5s ease;
+  text-align: center;
+  flex: 1;
+  margin: 0 10px;
+}
+
+.arp-msg.broadcast { border-color: var(--accent-orange); color: var(--accent-orange); }
+.arp-msg.reply { border-color: var(--accent-green); color: var(--accent-green); }
+.arp-msg.visible { opacity: 1; }
+
+/* ===== ROUTING FLOWCHART ===== */
+.routing-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 20px;
+}
+
+.flow-box {
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 20px;
+  text-align: center;
+  font-size: 0.9rem;
+  min-width: 200px;
+  transition: all 0.3s;
+}
+
+.flow-box.decision { border-color: var(--accent-orange); transform: rotate(0); background: #1a1400; min-width: 240px; }
+.flow-box.action-local { border-color: var(--accent-green); background: #001a0d; }
+.flow-box.action-remote { border-color: var(--accent-blue); background: #000d1a; }
+.flow-box.start { border-color: var(--accent-cyan); background: #001119; }
+
+.flow-arrow {
+  width: 2px;
+  height: 30px;
+  background: var(--border);
+  position: relative;
+}
+
+.flow-arrow::after {
+  content: '▼';
+  position: absolute;
+  bottom: -8px;
+  left: -7px;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.flow-branch {
+  display: flex;
+  gap: 40px;
+  margin-top: 12px;
+}
+
+.flow-branch-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+/* ===== NAT DIAGRAM ===== */
+.nat-diagram {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 20px;
+  align-items: center;
+  padding: 20px;
+}
+
+.nat-devices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nat-device {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nat-router {
+  background: var(--bg-card2);
+  border: 2px solid var(--accent-orange);
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(255,107,53,0.3);
+}
+
+/* ===== TRACEROUTE ===== */
+.traceroute-output {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.8;
+  min-height: 160px;
+}
+
+.hop-line {
+  display: none;
+  padding: 3px 0;
+  animation: fadeIn 0.4s ease;
+}
+
+.hop-line.visible { display: flex; gap: 16px; }
+.hop-num { color: var(--accent-cyan); width: 24px; }
+.hop-ip { color: var(--accent-green); }
+.hop-ms { color: var(--text-secondary); }
+.hop-host { color: var(--text-dim); }
+
+/* ===== STEP-BY-STEP ===== */
+.step-container {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.step-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.step-header {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+
+.step-card.active .step-num { background: var(--accent-cyan); color: var(--bg-primary); box-shadow: var(--glow-cyan); }
+.step-card.active { border-color: var(--accent-cyan); }
+
+.step-title { font-weight: 600; font-size: 0.95rem; }
+
+.step-content {
+  padding: 0 16px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+}
+
+.step-content.open {
+  max-height: 400px;
+  padding: 0 16px 16px;
+}
+
+/* ===== PACKET JOURNEY ===== */
+.journey-track {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 30px 10px;
+  scrollbar-width: none;
+}
+
+.journey-track::-webkit-scrollbar { display: none; }
+
+.journey-node {
+  text-align: center;
+  flex-shrink: 0;
+  opacity: 0.3;
+  transition: all 0.5s ease;
+}
+
+.journey-node.active { opacity: 1; }
+
+.journey-icon { font-size: 2rem; display: block; }
+
+.journey-label {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.journey-ip {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+
+.journey-arrow {
+  width: 40px;
+  height: 2px;
+  background: var(--border);
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.5s ease;
+}
+
+.journey-arrow.active { background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)); }
+
+.journey-arrow::after {
+  content: '▶';
+  position: absolute;
+  right: -8px;
+  top: -7px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  transition: color 0.5s ease;
+}
+
+.journey-arrow.active::after { color: var(--accent-cyan); }
+
+/* ===== PRACTICE LAB ===== */
+.quiz-card {
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.quiz-question {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  font-family: var(--font-head);
+}
+
+.quiz-input-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.answer-feedback {
+  padding: 14px 16px;
+  border-radius: 6px;
+  margin-top: 12px;
+  display: none;
+  animation: fadeIn 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.answer-feedback.visible { display: block; }
+.answer-feedback.correct { background: rgba(0,255,136,0.1); border: 1px solid var(--accent-green); color: var(--accent-green); }
+.answer-feedback.incorrect { background: rgba(255,51,85,0.1); border: 1px solid var(--accent-red); color: var(--accent-red); }
+
+/* ===== TROUBLESHOOTING ===== */
+.trouble-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.trouble-card {
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.trouble-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+.trouble-card.ping { border-top: 3px solid var(--accent-green); }
+.trouble-card.dns { border-top: 3px solid var(--accent-orange); }
+.trouble-card.gateway { border-top: 3px solid var(--accent-red); }
+.trouble-card.port { border-top: 3px solid var(--accent-purple); }
+
+.trouble-icon { font-size: 2rem; margin-bottom: 8px; }
+.trouble-title { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+.trouble-desc { font-size: 0.85rem; color: var(--text-secondary); }
+
+.trouble-output {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.8;
+  margin-top: 12px;
+  display: none;
+  animation: fadeIn 0.3s ease;
+  white-space: pre;
+}
+
+.trouble-output.visible { display: block; }
+.t-ok { color: var(--accent-green); }
+.t-err { color: var(--accent-red); }
+.t-warn { color: var(--accent-orange); }
+.t-info { color: var(--text-secondary); }
+
+/* ===== SECURITY INSIGHT ===== */
+.security-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.security-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.security-card-icon { font-size: 1.8rem; margin-bottom: 8px; }
+.security-card-title { font-weight: 700; color: var(--accent-cyan); margin-bottom: 6px; font-size: 0.95rem; }
+.security-card-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; }
+
+/* ===== MISTAKES SECTION ===== */
+.mistake-item {
+  background: rgba(255,51,85,0.05);
+  border: 1px solid rgba(255,51,85,0.2);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 4px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.mistake-title { color: var(--accent-red); font-weight: 700; margin-bottom: 4px; }
+.mistake-fix { color: var(--text-secondary); font-size: 0.9rem; }
+.mistake-fix strong { color: var(--accent-green); }
+
+/* ===== INFO BADGES ===== */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-cyan { background: rgba(0,212,255,0.15); color: var(--accent-cyan); border: 1px solid rgba(0,212,255,0.3); }
+.badge-green { background: rgba(0,255,136,0.15); color: var(--accent-green); border: 1px solid rgba(0,255,136,0.3); }
+.badge-orange { background: rgba(255,107,53,0.15); color: var(--accent-orange); border: 1px solid rgba(255,107,53,0.3); }
+.badge-red { background: rgba(255,51,85,0.15); color: var(--accent-red); border: 1px solid rgba(255,51,85,0.3); }
+
+/* ===== STATS ROW ===== */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.stat-box {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  text-align: center;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--accent-cyan);
+  display: block;
+  text-shadow: var(--glow-cyan);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  display: block;
+  margin-top: 4px;
+}
+
+/* ===== RESULTS TABLE ===== */
+#subnet-results { margin-top: 20px; }
+#subnet-results table { width: 100%; }
+
+/* ===== ALERT BOX ===== */
+.alert-box {
+  background: rgba(255,107,53,0.1);
+  border: 1px solid var(--accent-orange);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-top: 16px;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.alert-box strong { color: var(--accent-orange); }
+
+/* ===== COMPARISON TABLE ===== */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.compare-col {
+  background: var(--bg-primary);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.compare-header {
+  padding: 12px 16px;
+  font-weight: 700;
+  text-align: center;
+  font-family: var(--font-head);
+}
+
+.compare-header.tcp { background: rgba(0,212,255,0.15); color: var(--accent-cyan); }
+.compare-header.udp { background: rgba(255,107,53,0.15); color: var(--accent-orange); }
+
+.compare-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+/* ===== IP CLASS TABLE ===== */
+.class-row { border-bottom: 1px solid var(--border); }
+
+/* ===== ANIMATIONS ===== */
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+@keyframes slideRight { from{transform:translateX(-20px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+.pulse { animation: pulse 2s infinite; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .header-top { flex-direction: column; gap: 10px; }
+  .progress-bar-container { max-width: 100%; margin: 0; }
+  .nat-diagram { grid-template-columns: 1fr; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .handshake-diagram { grid-template-columns: 1fr; }
+  .osi-layer { grid-template-columns: 40px 1fr; }
+  .layer-brief { grid-column: 2 / -1; }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+code {
+  font-family: var(--font-mono);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.85em;
+  color: var(--accent-green);
+}
+
+p { line-height: 1.7; color: var(--text-secondary); margin-bottom: 10px; }
+h4 { color: var(--text-primary); font-family: var(--font-head); margin: 12px 0 6px; }
+ul { padding-left: 20px; color: var(--text-secondary); line-height: 1.8; }
+ul li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo">NET<span>SEC</span> ACADEMY</div>
+    <div class="progress-bar-container">
+      <div class="progress-label">LEARNING PROGRESS — <span id="progress-pct">0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+    <div class="status-badge">◉ LIVE LAB</div>
+  </div>
+  <div class="nav-tabs" id="nav-tabs">
+    <button class="nav-tab active" onclick="showSection('s1',this)">🔷 OSI &amp; TCP/IP</button>
+    <button class="nav-tab" onclick="showSection('s2',this)">🤝 TCP Handshake</button>
+    <button class="nav-tab" onclick="showSection('s3',this)">📦 Data &amp; Addressing</button>
+    <button class="nav-tab" onclick="showSection('s4',this)">🌐 Routing &amp; NAT</button>
+    <button class="nav-tab" onclick="showSection('s5',this)">🔥 Subnetting Lab</button>
+    <button class="nav-tab" onclick="showSection('s6',this)">🚀 Packet Journey</button>
+    <button class="nav-tab" onclick="showSection('s7',this)">🔧 Troubleshooting</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ============================================================ -->
+<!-- SECTION 1: OSI + TCP/IP -->
+<!-- ============================================================ -->
+<div class="section active" id="s1">
+  <div class="section-title">OSI Model &amp; TCP/IP Stack</div>
+  <div class="section-subtitle">// Click each layer to reveal details, protocols, and real-world examples</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+    <!-- OSI Model -->
+    <div class="card">
+      <div class="card-title">🏗️ OSI Model — 7 Layers</div>
+      <p style="font-size:0.85rem;margin-bottom:14px;">Open Systems Interconnection — the universal language of networking.</p>
+      <div class="osi-grid" id="osi-grid">
+
+        <div class="osi-layer l7" onclick="toggleLayer(this)">
+          <div class="layer-num">7</div>
+          <div class="layer-name">Application</div>
+          <div class="layer-brief">User interface &amp; software interaction</div>
+          <div class="layer-details">
+            <div class="detail-grid">
+              <div class="detail-box"><label>FUNCTION</label><span>Interface between user and network services</span></div>
+              <div class="detail-box"><label>PROTOCOLS</label><span>HTTP, HTTPS, DNS, FTP, SMTP, SSH</span></div>
+              <div class="detail-box"><label>DEVICES</label><span>Web browsers, email clients, apps</span></div>
+              <div class="detail-box"><label>EXAMPLE</label><span>You type google.com → HTTP request generated</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="osi-layer l6" onclick="toggleLayer(this)">
+          <div class="layer-num">6</div>
+          <div class="layer-name">Presentation</div>
+          <div class="layer-brief">Encryption, formatting, compression</div>
+          <div class="layer-details">
+            <div class="detail-grid">
+              <div class="detail-box"><label>FUNCTION</label><span>Translate, encrypt/decrypt, compress data</span></div>
+              <div class="detail-box"><label>PROTOCOLS</label><span>SSL/TLS, JPEG, MP3, MPEG, ASCII</span></div>
+              <div class="detail-box"><label>SECURITY</label><span>HTTPS encryption happens here</span></div>
+              <div class="detail-box"><label>EXAMPLE</label><span>TLS encrypts your payment info on shopping sites</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="osi-layer l5" onclick="toggleLayer(this)">
+          <div class="layer-num">5</div>
+          <div class="layer-name">Session</div>
+          <div class="layer-brief">Manages connections and sessions</div>
+          <div class="layer-details">
+            <div class="detail-grid">
+              <div class="detail-box"><label>FUNCTION</label><span>Opens, maintains, and closes sessions</span></div>
+              <div class="detail-box"><label>PROTOCOLS</label><span>NetBIOS, RPC, SMB, PPTP</span></div>
+              <div class="detail-box"><label>DEVICES</label><span>Gateways, session managers</span></div>
+              <div class="detail-box"><label>EXAMPLE</label><span>Gmail and YouTube kept as separate sessions</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="osi-layer l4" onclick="toggleLayer(this)">
+          <div class="layer-num">4</div>
+          <div class="layer-name">Transport</div>
+          <div class="layer-brief">Reliable delivery, segmentation, flow control</div>
+          <div class="layer-details">
+            <div class="detail-grid">
+              <div class="detail-box"><label>FUNCTION</label><span>Break data into segments, ensure delivery</span></div>
+              <div class="detail-box"><label>PROTOCOLS</label><span>TCP (reliable), UDP (fast)</span></div>
+              <div class="detail-box"><label>DEVICES</label><span>Firewalls, load balancers</span></div>
+              <div class="detail-box"><label>PDU</label><span>Segment</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="osi-layer l3" onclick="toggleLayer(this)">
+          <div class="layer-num">3</div>
+          <div class="layer-name">Network</div>
+          <div class="layer-brief">Logical addressing and routing</div>
+          <div class="layer-details">
+            <div class="detail-grid">
+              <div class="detail-box"><label>FUNCTION</label><span>IP addressing, routing decisions</span></div>
+              <div class="detail-box"><label>PROTOCOLS</label><span>IP, ICMP, OSPF, BGP, IPsec</span></div>
+              <div class="detail-box"><label>DEVICES</label><span>Routers, Layer 3 switches</span></div>
+              <div class="detail-box"><label>PDU</label><span>Packet</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="osi-layer l2" onclick="toggleLayer(this)">
+          <div class="layer-num">2</div>
+          <div class="layer-name">Data Link</div>
+          <div class="layer-brief">MAC addressing, framing, local delivery</div>
+          <div class="layer-details">
+            <div class="detail-grid">
+              <div class="detail-box"><label>FUNCTION</label><span>Physical addressing within LAN</span></div>
+              <div class="detail-box"><label>PROTOCOLS</label><span>Ethernet, ARP, PPP, VLAN</span></div>
+              <div class="detail-box"><label>DEVICES</label><span>Switches, NICs, Bridges</span></div>
+              <div class="detail-box"><label>PDU</label><span>Frame</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="osi-layer l1" onclick="toggleLayer(this)">
+          <div class="layer-num">1</div>
+          <div class="layer-name">Physical</div>
+          <div class="layer-brief">Raw signal transmission on the medium</div>
+          <div class="layer-details">
+            <div class="detail-grid">
+              <div class="detail-box"><label>FUNCTION</label><span>Convert data to electrical/light/radio signals</span></div>
+              <div class="detail-box"><label>STANDARDS</label><span>Ethernet, Wi-Fi (802.11), DSL, Fiber</span></div>
+              <div class="detail-box"><label>DEVICES</label><span>Cables, Hubs, Repeaters</span></div>
+              <div class="detail-box"><label>PDU</label><span>Bits (1s and 0s)</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TCP/IP Model -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="card">
+        <div class="card-title">🌐 TCP/IP Model — 4 Layers</div>
+        <p style="font-size:0.85rem;margin-bottom:14px;">The practical model that actually runs the internet.</p>
+        <table class="data-table">
+          <thead><tr><th>TCP/IP Layer</th><th>OSI Equivalent</th><th>Key Protocols</th></tr></thead>
+          <tbody>
+            <tr><td style="color:#ff6b35;font-weight:700;">Application</td><td>L7 + L6 + L5</td><td class="highlight">HTTP, DNS, SMTP, FTP</td></tr>
+            <tr><td style="color:#00ff88;font-weight:700;">Transport</td><td>L4</td><td class="highlight">TCP, UDP</td></tr>
+            <tr><td style="color:#00d4ff;font-weight:700;">Internet</td><td>L3</td><td class="highlight">IP, ICMP, ARP</td></tr>
+            <tr><td style="color:#7c3aed;font-weight:700;">Network Access</td><td>L2 + L1</td><td class="highlight">Ethernet, Wi-Fi</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Encapsulation Flow -->
+      <div class="card">
+        <div class="card-title">⚡ Encapsulation Flow</div>
+        <p style="font-size:0.85rem;margin-bottom:12px;">Each layer <strong style="color:var(--accent-cyan)">wraps</strong> data with its own header before passing it down.</p>
+        <button class="btn btn-green btn-sm" onclick="animateEncap()">▶ Animate Encapsulation</button>
+        <button class="btn btn-sm" onclick="resetEncap()" style="margin-left:8px;">↺ Reset</button>
+        <div class="encap-flow" id="encap-flow" style="margin-top:12px;">
+          <div class="encap-layer" id="el7" style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.3);color:#ff9f7a;">[ HTTP DATA ] ← Application (L7)</div>
+          <div class="encap-layer" id="el4" style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.3);color:#6effc8;">[ TCP Header | HTTP DATA ] ← Transport (L4)</div>
+          <div class="encap-layer" id="el3" style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.3);color:#7ae8ff;">[ IP Header | TCP Header | HTTP DATA ] ← Network (L3)</div>
+          <div class="encap-layer" id="el2" style="background:rgba(0,128,255,0.08);border:1px solid rgba(0,128,255,0.3);color:#80c0ff;">[ MAC Frame | IP | TCP | DATA | FCS ] ← Data Link (L2)</div>
+          <div class="encap-layer" id="el1" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.3);color:#c084fc;">[ 10110011 01001101 ... ] ← Physical (L1) BITS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Memory Aid -->
+  <div class="card">
+    <div class="card-title">🧠 Memory Aid + IP Class Table</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <p>Remember OSI layers with: <strong style="color:var(--accent-cyan)">"All People Seem To Need Data Processing"</strong></p>
+        <div style="margin:12px 0;padding:12px;background:var(--bg-primary);border-radius:6px;font-family:var(--font-mono);font-size:0.8rem;line-height:2;">
+          <div><span style="color:#ff6b35;">A</span>ll → <span style="color:#ff6b35;">Application</span></div>
+          <div><span style="color:#ff9f1c;">P</span>eople → <span style="color:#ff9f1c;">Presentation</span></div>
+          <div><span style="color:#ffdd00;">S</span>eem → <span style="color:#ffdd00;">Session</span></div>
+          <div><span style="color:#00ff88;">T</span>o → <span style="color:#00ff88;">Transport</span></div>
+          <div><span style="color:#00d4ff;">N</span>eed → <span style="color:#00d4ff;">Network</span></div>
+          <div><span style="color:#0080ff;">D</span>ata → <span style="color:#0080ff;">Data Link</span></div>
+          <div><span style="color:#7c3aed;">P</span>rocessing → <span style="color:#7c3aed;">Physical</span></div>
+        </div>
+      </div>
+      <div>
+        <h4>IP Address Classes</h4>
+        <table class="data-table">
+          <thead><tr><th>Class</th><th>Range</th><th>Subnet</th><th>Use</th></tr></thead>
+          <tbody>
+            <tr><td style="color:#00ff88;font-weight:700;">A</td><td class="highlight">0–127</td><td>255.0.0.0 /8</td><td>Large networks</td></tr>
+            <tr><td style="color:#00d4ff;font-weight:700;">B</td><td class="highlight">128–191</td><td>255.255.0.0 /16</td><td>Medium</td></tr>
+            <tr><td style="color:#0080ff;font-weight:700;">C</td><td class="highlight">192–223</td><td>255.255.255.0 /24</td><td>Small</td></tr>
+            <tr><td style="color:#ff9f1c;font-weight:700;">D</td><td class="highlight">224–239</td><td>—</td><td>Multicast</td></tr>
+            <tr><td style="color:#7c3aed;font-weight:700;">E</td><td class="highlight">240–255</td><td>—</td><td>Experimental</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 2: TCP HANDSHAKE -->
+<!-- ============================================================ -->
+<div class="section" id="s2">
+  <div class="section-title">TCP Three-Way Handshake</div>
+  <div class="section-subtitle">// The polite conversation that starts every reliable internet connection</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+    <div class="card">
+      <div class="card-title">🤝 Interactive Handshake Diagram</div>
+      <p style="font-size:0.85rem;margin-bottom:16px;">Click each step to see the handshake happen in real-time.</p>
+
+      <div class="handshake-diagram">
+        <div class="hs-entity">
+          <span class="hs-entity-icon">💻</span>
+          <div class="hs-entity-name">CLIENT</div>
+          <div class="hs-entity-ip">192.168.1.10</div>
+          <div style="margin-top:12px;padding:8px;background:var(--bg-primary);border-radius:4px;font-size:0.75rem;font-family:var(--font-mono);">
+            <div id="client-state" style="color:var(--text-dim);">CLOSED</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:24px;padding-top:50px;">
+          <div class="hs-arrow arrow-right" id="hs-arrow1" style="width:100%;display:flex;align-items:center;position:relative;">
+            <div class="hs-arrow-line" style="width:60px;position:relative;">
+              <div class="hs-arrow-label" id="hs-label1">SYN</div>
+            </div>
+            <span style="font-size:0.8rem;color:var(--text-dim);">→</span>
+          </div>
+          <div class="hs-arrow arrow-left" id="hs-arrow2" style="width:100%;display:flex;align-items:center;position:relative;flex-direction:row-reverse;">
+            <div class="hs-arrow-line" style="width:60px;position:relative;">
+              <div class="hs-arrow-label" id="hs-label2">SYN-ACK</div>
+            </div>
+            <span style="font-size:0.8rem;color:var(--text-dim);">←</span>
+          </div>
+          <div class="hs-arrow arrow-right" id="hs-arrow3" style="width:100%;display:flex;align-items:center;position:relative;">
+            <div class="hs-arrow-line" style="width:60px;position:relative;">
+              <div class="hs-arrow-label" id="hs-label3">ACK</div>
+            </div>
+            <span style="font-size:0.8rem;color:var(--text-dim);">→</span>
+          </div>
+        </div>
+        <div class="hs-entity">
+          <span class="hs-entity-icon">🖥️</span>
+          <div class="hs-entity-name">SERVER</div>
+          <div class="hs-entity-ip">93.184.216.34</div>
+          <div style="margin-top:12px;padding:8px;background:var(--bg-primary);border-radius:4px;font-size:0.75rem;font-family:var(--font-mono);">
+            <div id="server-state" style="color:var(--text-dim);">LISTEN</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hs-steps">
+        <button class="btn btn-sm" id="hs-btn1" onclick="hsStep(1)">Step 1: SYN →</button>
+        <button class="btn btn-sm" id="hs-btn2" onclick="hsStep(2)">Step 2: ← SYN-ACK</button>
+        <button class="btn btn-sm" id="hs-btn3" onclick="hsStep(3)">Step 3: ACK →</button>
+        <button class="btn btn-sm btn-orange" onclick="hsReset()">↺ Reset</button>
+      </div>
+
+      <div class="explanation-box" id="hs-explain"></div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="card">
+        <div class="card-title">📋 Handshake Reference</div>
+        <table class="data-table">
+          <thead><tr><th>Step</th><th>Flag</th><th>Analogy</th><th>State</th></tr></thead>
+          <tbody>
+            <tr><td>1️⃣</td><td><span class="badge badge-cyan">SYN</span></td><td>Knock on door</td><td class="highlight">SYN_SENT</td></tr>
+            <tr><td>2️⃣</td><td><span class="badge badge-orange">SYN+ACK</span></td><td>"Come in!"</td><td class="highlight">SYN_RCVD</td></tr>
+            <tr><td>3️⃣</td><td><span class="badge badge-green">ACK</span></td><td>Step inside</td><td class="highlight">ESTABLISHED</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⚠️ SYN Flood Attack</div>
+        <div class="alert-box">
+          <strong>🔴 Attack Type: DoS / DDoS</strong><br><br>
+          An attacker sends thousands of <code>SYN</code> packets with <strong>spoofed source IPs</strong>. The server responds with <code>SYN-ACK</code> but never receives the final <code>ACK</code>.<br><br>
+          Result: Server's connection table fills up → <strong>legitimate users can't connect</strong>.<br><br>
+          <strong style="color:var(--accent-green);">Defense:</strong> SYN cookies, rate limiting, firewall rules, IDS/IPS systems.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔵 TCP vs UDP Comparison</div>
+        <div class="compare-grid">
+          <div class="compare-col">
+            <div class="compare-header tcp">TCP 📞</div>
+            <div class="compare-item">✅ Connection-oriented</div>
+            <div class="compare-item">✅ Guaranteed delivery</div>
+            <div class="compare-item">✅ Ordered packets</div>
+            <div class="compare-item">✅ Error checking</div>
+            <div class="compare-item">🌐 Web, Email, SSH</div>
+          </div>
+          <div class="compare-col">
+            <div class="compare-header udp">UDP 📮</div>
+            <div class="compare-item">⚡ Connectionless</div>
+            <div class="compare-item">⚡ Fire and forget</div>
+            <div class="compare-item">⚡ No ordering</div>
+            <div class="compare-item">⚡ Minimal overhead</div>
+            <div class="compare-item">🎮 Gaming, Video, DNS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wireshark guide -->
+  <div class="card">
+    <div class="card-title">🔬 Wireshark — Capture the Handshake</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <h4>Filter Commands</h4>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+          <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:10px 14px;font-family:var(--font-mono);font-size:0.85rem;">
+            <span style="color:var(--text-dim)">// Show only TCP traffic</span><br>
+            <span style="color:var(--accent-green);">tcp</span>
+          </div>
+          <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:10px 14px;font-family:var(--font-mono);font-size:0.85rem;">
+            <span style="color:var(--text-dim)">// Show only SYN packets (handshake start)</span><br>
+            <span style="color:var(--accent-green);">tcp.flags.syn == 1</span>
+          </div>
+          <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:10px 14px;font-family:var(--font-mono);font-size:0.85rem;">
+            <span style="color:var(--text-dim)">// Web traffic only</span><br>
+            <span style="color:var(--accent-green);">tcp.port == 80 or tcp.port == 443</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h4>What You'll See in Each Packet</h4>
+        <ul style="margin-top:8px;">
+          <li><span style="color:var(--accent-cyan);">Frame</span> — L2 MAC addresses</li>
+          <li><span style="color:var(--accent-cyan);">Internet Protocol</span> — L3 Source/Dest IP</li>
+          <li><span style="color:var(--accent-cyan);">Transmission Control Protocol</span> — L4 Port &amp; flags</li>
+          <li><span style="color:var(--accent-cyan);">HTTP/Data</span> — L7 actual content</li>
+        </ul>
+        <div class="alert-box" style="margin-top:10px;">
+          <strong>💡 Pro Tip:</strong> Visit <code>http://example.com</code> (not https) to see unencrypted HTTP data in plaintext within Wireshark.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 3: DATA FLOW & ADDRESSING -->
+<!-- ============================================================ -->
+<div class="section" id="s3">
+  <div class="section-title">Data Units &amp; Addressing</div>
+  <div class="section-subtitle">// Bits, Frames, Packets, Segments — MAC vs IP — ARP Protocol</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+
+    <!-- PDU Visual -->
+    <div class="card">
+      <div class="card-title">📦 Protocol Data Units (PDUs)</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.3);border-left:3px solid #ff6b35;border-radius:4px;padding:14px;">
+          <div style="font-weight:700;color:#ff6b35;">📱 DATA — Application Layer (L7)</div>
+          <p style="font-size:0.85rem;margin-top:4px;">Raw application payload — "GET /index.html HTTP/1.1"</p>
+        </div>
+        <div style="text-align:center;color:var(--text-dim);font-size:0.8rem;">↓ Transport wraps with TCP header</div>
+        <div style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.3);border-left:3px solid #00ff88;border-radius:4px;padding:14px;">
+          <div style="font-weight:700;color:#00ff88;">📦 SEGMENT — Transport Layer (L4)</div>
+          <p style="font-size:0.85rem;margin-top:4px;">[ TCP Header: Port, Seq# ] + Data — Contains port numbers</p>
+        </div>
+        <div style="text-align:center;color:var(--text-dim);font-size:0.8rem;">↓ Network wraps with IP header</div>
+        <div style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.3);border-left:3px solid #00d4ff;border-radius:4px;padding:14px;">
+          <div style="font-weight:700;color:#00d4ff;">🌐 PACKET — Network Layer (L3)</div>
+          <p style="font-size:0.85rem;margin-top:4px;">[ IP Header: Src/Dst IP ] + Segment — Contains IP addresses</p>
+        </div>
+        <div style="text-align:center;color:var(--text-dim);font-size:0.8rem;">↓ Data Link wraps with Ethernet header</div>
+        <div style="background:rgba(0,128,255,0.08);border:1px solid rgba(0,128,255,0.3);border-left:3px solid #0080ff;border-radius:4px;padding:14px;">
+          <div style="font-weight:700;color:#0080ff;">🖼️ FRAME — Data Link Layer (L2)</div>
+          <p style="font-size:0.85rem;margin-top:4px;">[ Ethernet: Src/Dst MAC ] + Packet + FCS — Contains MAC addresses</p>
+        </div>
+        <div style="text-align:center;color:var(--text-dim);font-size:0.8rem;">↓ Physical converts to signals</div>
+        <div style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.3);border-left:3px solid #7c3aed;border-radius:4px;padding:14px;">
+          <div style="font-weight:700;color:#7c3aed;">⚡ BITS — Physical Layer (L1)</div>
+          <p style="font-size:0.85rem;margin-top:4px;">1010110011001101... → Electrical / Light / Radio signals</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAC vs IP -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="card">
+        <div class="card-title">🆔 MAC Address vs IP Address</div>
+        <table class="data-table">
+          <thead><tr><th>Feature</th><th>MAC Address</th><th>IP Address</th></tr></thead>
+          <tbody>
+            <tr><td>Full Name</td><td>Media Access Control</td><td>Internet Protocol</td></tr>
+            <tr><td>Layer</td><td><span class="badge badge-cyan">L2 Data Link</span></td><td><span class="badge badge-green">L3 Network</span></td></tr>
+            <tr><td>Example</td><td class="highlight">00:1A:2B:3C:4D:5E</td><td class="highlight">192.168.1.10</td></tr>
+            <tr><td>Format</td><td>Hexadecimal</td><td>Dotted decimal</td></tr>
+            <tr><td>Permanent?</td><td style="color:var(--accent-green);">✅ Hardware (NIC)</td><td style="color:var(--accent-orange);">❌ Changes per network</td></tr>
+            <tr><td>Scope</td><td>Local LAN only</td><td>Global (internet)</td></tr>
+            <tr><td>Analogy</td><td>Your name (fixed)</td><td>Your address (changes)</td></tr>
+          </tbody>
+        </table>
+        <div class="alert-box" style="margin-top:12px;font-size:0.85rem;">
+          <strong>💡 Think of it this way:</strong> If you move to a new city, your name (MAC) stays the same — but your home address (IP) changes!
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔍 Find Your Addresses</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:10px 14px;">
+            <div style="font-family:var(--font-mono);font-size:0.8rem;">
+              <div style="color:var(--text-dim)">// Windows</div>
+              <div style="color:var(--accent-green);margin:4px 0;">ipconfig /all</div>
+              <div style="color:var(--text-dim)">// Linux / Mac</div>
+              <div style="color:var(--accent-green);">ifconfig</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:14px;font-family:var(--font-mono);font-size:0.8rem;line-height:1.8;">
+          <div style="color:var(--text-dim);">Ethernet adapter Local Area Connection:</div>
+          <div>  IPv4 Address. . . . : <span style="color:var(--accent-cyan);">192.168.1.105</span></div>
+          <div>  Subnet Mask . . . . : <span style="color:var(--accent-green);">255.255.255.0</span></div>
+          <div>  Default Gateway . . : <span style="color:var(--accent-orange);">192.168.1.1</span></div>
+          <div>  Physical Address. . : <span style="color:var(--accent-cyan);">A4-C3-F0-85-AC-2D</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARP Section -->
+  <div class="card">
+    <div class="card-title">📡 ARP — Address Resolution Protocol</div>
+    <p style="margin-bottom:16px;">ARP is the bridge between IP addresses and MAC addresses. When your computer has an IP it wants to talk to but doesn't know the MAC — ARP asks around!</p>
+
+    <div class="arp-canvas" id="arp-canvas">
+      <div class="arp-row">
+        <div class="arp-device">
+          <div class="arp-icon">💻</div>
+          <div class="arp-label">Your PC</div>
+          <div class="arp-ip">192.168.1.5</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:12px;align-items:center;">
+          <div class="arp-msg broadcast" id="arp-broadcast">
+            📢 WHO HAS 192.168.1.1?<br>TELL 192.168.1.5<br><small>(Broadcast: FF:FF:FF:FF:FF:FF)</small>
+          </div>
+          <div class="arp-msg reply" id="arp-reply">
+            ✅ I HAVE 192.168.1.1!<br>MY MAC: AA:BB:CC:11:22:33
+          </div>
+        </div>
+        <div class="arp-device">
+          <div class="arp-icon">📡</div>
+          <div class="arp-label">Router</div>
+          <div class="arp-ip">192.168.1.1</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
+      <button class="btn btn-green" onclick="runArpSim()">▶ Run ARP Simulation</button>
+      <button class="btn btn-sm" onclick="resetArp()">↺ Reset</button>
+    </div>
+
+    <div class="explanation-box" id="arp-explain" style="margin-top:12px;">
+      <h4>ARP Commands</h4>
+      <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:10px;font-family:var(--font-mono);font-size:0.8rem;margin-top:8px;line-height:1.8;">
+        <div style="color:var(--text-dim);">// View ARP cache (Windows/Linux)</div>
+        <div style="color:var(--accent-green);">arp -a</div>
+        <br>
+        <div style="color:var(--text-dim);">// Typical output:</div>
+        <div>Interface: 192.168.1.5</div>
+        <div>Internet Address &nbsp; Physical Address &nbsp; &nbsp; &nbsp; Type</div>
+        <div>192.168.1.1 &nbsp; &nbsp; &nbsp; aa-bb-cc-11-22-33 &nbsp; dynamic</div>
+        <div>192.168.1.255 &nbsp; &nbsp; ff-ff-ff-ff-ff-ff &nbsp; static</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IPv4 vs IPv6 -->
+  <div class="card" style="margin-top:0;">
+    <div class="card-title">🌍 IPv4 vs IPv6</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <h4 style="color:var(--accent-cyan);">IPv4</h4>
+        <ul style="font-size:0.9rem;">
+          <li>32 bits → ~4.3 billion addresses</li>
+          <li>Format: <code>192.168.10.5</code></li>
+          <li>Running out! Solved by NAT + CIDR</li>
+          <li>Still most common today</li>
+        </ul>
+      </div>
+      <div>
+        <h4 style="color:var(--accent-green);">IPv6</h4>
+        <ul style="font-size:0.9rem;">
+          <li>128 bits → 340 undecillion addresses</li>
+          <li>Format: <code>2001:0db8:85a3::8a2e:0370:7334</code></li>
+          <li>Enough for every grain of sand on Earth</li>
+          <li>Built-in security (IPsec)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 4: ROUTING + NAT + TRACEROUTE -->
+<!-- ============================================================ -->
+<div class="section" id="s4">
+  <div class="section-title">Routing, NAT &amp; Traceroute</div>
+  <div class="section-subtitle">// How packets find their way across the internet</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+
+    <!-- Routing Flowchart -->
+    <div class="card">
+      <div class="card-title">🗺️ Routing Decision Flowchart</div>
+      <p style="font-size:0.85rem;margin-bottom:16px;">How does your computer decide where to send a packet?</p>
+      <div class="routing-flow">
+        <div class="flow-box start">💻 Packet Ready to Send<br><small style="color:var(--text-dim);">Source: 192.168.1.5 → Dest: ???</small></div>
+        <div class="flow-arrow"></div>
+        <div class="flow-box decision">🤔 Is destination on<br>the SAME subnet?<br><small>(Compare with subnet mask)</small></div>
+        <div class="flow-branch">
+          <div>
+            <div class="flow-branch-label">YES — Local</div>
+            <div class="flow-box action-local">📤 Send directly via<br>MAC address (ARP)</div>
+          </div>
+          <div>
+            <div class="flow-branch-label">NO — Remote</div>
+            <div class="flow-box action-remote">🚪 Send to Default<br>Gateway (Router)</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:12px;font-family:var(--font-mono);font-size:0.8rem;line-height:1.8;">
+        <div style="color:var(--text-dim);">// View routing table</div>
+        <div style="color:var(--accent-green);">route print &nbsp; &nbsp; # Windows</div>
+        <div style="color:var(--accent-green);">route -n &nbsp; &nbsp; &nbsp; &nbsp;# Linux</div>
+        <br>
+        <div style="color:var(--text-dim);">// 0.0.0.0 = Default route → your gateway</div>
+        <div>Destination &nbsp; Gateway &nbsp; &nbsp; Mask</div>
+        <div><span style="color:var(--accent-cyan);">0.0.0.0</span> &nbsp; &nbsp; 192.168.1.1 &nbsp; 0.0.0.0</div>
+      </div>
+    </div>
+
+    <!-- NAT -->
+    <div class="card">
+      <div class="card-title">🔄 NAT — Network Address Translation</div>
+      <p style="font-size:0.85rem;margin-bottom:16px;">How multiple devices share ONE public IP to access the internet.</p>
+
+      <div class="nat-diagram">
+        <div>
+          <h4 style="margin-bottom:10px;">Private Network</h4>
+          <div class="nat-devices">
+            <div class="nat-device"><span>💻 Laptop</span><span style="color:var(--accent-cyan);">192.168.1.2</span></div>
+            <div class="nat-device"><span>📱 Phone</span><span style="color:var(--accent-cyan);">192.168.1.3</span></div>
+            <div class="nat-device"><span>📺 Smart TV</span><span style="color:var(--accent-cyan);">192.168.1.4</span></div>
+            <div class="nat-device"><span>🖥️ Desktop</span><span style="color:var(--accent-cyan);">192.168.1.5</span></div>
+          </div>
+        </div>
+        <div class="nat-router">
+          <span style="font-size:1.5rem;">📡</span>
+          <span style="color:var(--accent-orange);font-weight:700;font-size:0.85rem;">ROUTER</span>
+          <span style="color:var(--text-dim);font-size:0.7rem;">NAT</span>
+        </div>
+        <div>
+          <h4 style="margin-bottom:10px;">Public Internet</h4>
+          <div style="background:var(--bg-primary);border:1px solid var(--accent-blue);border-radius:6px;padding:12px;text-align:center;">
+            <div style="font-size:1.5rem;">🌐</div>
+            <div style="font-family:var(--font-mono);font-size:0.8rem;color:var(--accent-cyan);">203.0.113.45</div>
+            <div style="font-size:0.75rem;color:var(--text-dim);">One Public IP</div>
+          </div>
+        </div>
+      </div>
+
+      <table class="data-table" style="margin-top:12px;">
+        <thead><tr><th>Type</th><th>Mapping</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td style="color:var(--accent-cyan);font-weight:700;">Static NAT</td><td>1-to-1 mapping</td><td>Internal server ↔ Public IP</td></tr>
+          <tr><td style="color:var(--accent-orange);font-weight:700;">Dynamic NAT</td><td>1-to-pool</td><td>Temporary internet access</td></tr>
+          <tr><td style="color:var(--accent-green);font-weight:700;">PAT / Overload</td><td>Many-to-1 (ports)</td><td>Home Wi-Fi router</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Traceroute -->
+  <div class="card">
+    <div class="card-title">🛤️ Traceroute — Hop-by-Hop Visualization</div>
+    <p style="margin-bottom:16px;">Watch each network hop appear as your packet travels from your PC to Google's servers.</p>
+    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+      <button class="btn btn-green" onclick="runTraceroute()">▶ Trace Packet to google.com</button>
+      <button class="btn btn-sm" onclick="resetTrace()">↺ Reset</button>
+    </div>
+
+    <div class="traceroute-output" id="trace-output">
+      <div style="color:var(--text-dim);font-size:0.8rem;">// Click "Trace Packet" to simulate traceroute</div>
+      <div style="color:var(--text-dim);font-size:0.8rem;">// tracert google.com (Windows) | traceroute google.com (Linux)</div>
+    </div>
+
+    <div class="explanation-box visible" style="margin-top:12px;">
+      <strong>🧠 How Traceroute Works (TTL Trick):</strong><br><br>
+      Each packet gets a TTL (Time-To-Live) counter. It starts at 1, then 2, then 3...<br>
+      When TTL hits 0 at any router, that router sends back "TTL exceeded" — revealing its IP.<br>
+      This maps the full path hop by hop!
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 5: SUBNETTING LAB -->
+<!-- ============================================================ -->
+<div class="section" id="s5">
+  <div class="section-title">🔥 Subnetting Core Lab</div>
+  <div class="section-subtitle">// The most important networking skill — master it here</div>
+
+  <!-- Concepts -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+    <div class="card">
+      <div class="card-title">🧠 What is Subnetting?</div>
+      <p>Subnetting is the process of <strong style="color:var(--accent-cyan);">dividing one large network into smaller sub-networks</strong>. Like dividing a city into neighborhoods.</p>
+      <div style="margin:12px 0;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:16px;font-family:var(--font-mono);font-size:0.85rem;line-height:1.8;">
+        <div style="color:var(--text-dim);">Before Subnetting:</div>
+        <div>192.168.1.0<span style="color:var(--accent-cyan);">/24</span> → 254 hosts, 1 big network</div>
+        <br>
+        <div style="color:var(--text-dim);">After Subnetting into 4:</div>
+        <div>192.168.1.0<span style="color:var(--accent-green);">/26</span> → 4 × 62 hosts</div>
+      </div>
+      <h4>Key Formulas</h4>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        <div style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.3);border-radius:4px;padding:10px 14px;">
+          <span style="color:var(--accent-cyan);font-family:var(--font-mono);">2ⁿ = number of subnets</span>
+          <span style="color:var(--text-dim);font-size:0.8rem;display:block;margin-top:2px;">(n = bits borrowed)</span>
+        </div>
+        <div style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.3);border-radius:4px;padding:10px 14px;">
+          <span style="color:var(--accent-green);font-family:var(--font-mono);">2ʰ − 2 = usable hosts</span>
+          <span style="color:var(--text-dim);font-size:0.8rem;display:block;margin-top:2px;">(h = host bits, -2 for network & broadcast)</span>
+        </div>
+        <div style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:4px;padding:10px 14px;">
+          <span style="color:var(--accent-orange);font-family:var(--font-mono);">256 − subnet mask octet = block size</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CIDR Slider -->
+    <div class="card">
+      <div class="card-title">🎚️ CIDR Prefix Slider</div>
+      <p style="font-size:0.85rem;margin-bottom:12px;">Slide to see how network/host bits change:</p>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <span style="font-family:var(--font-mono);color:var(--accent-cyan);font-size:1.4rem;">/<span id="cidr-val">24</span></span>
+        <input type="range" class="cidr-slider" id="cidr-slider" min="8" max="30" value="24" oninput="updateCidr(this.value)">
+      </div>
+      <div class="stats-row" id="cidr-stats">
+        <div class="stat-box"><span class="stat-value" id="cs-netbits">24</span><span class="stat-label">Network Bits</span></div>
+        <div class="stat-box"><span class="stat-value" id="cs-hostbits">8</span><span class="stat-label">Host Bits</span></div>
+        <div class="stat-box"><span class="stat-value" id="cs-hosts">254</span><span class="stat-label">Usable Hosts</span></div>
+        <div class="stat-box"><span class="stat-value" id="cs-mask">255.255.255.0</span><span class="stat-label">Subnet Mask</span></div>
+      </div>
+      <div class="bit-display" id="bit-display"></div>
+      <div style="display:flex;gap:12px;margin-top:8px;font-size:0.75rem;">
+        <span><span class="bit-box bit-net" style="display:inline-flex;width:20px;height:16px;font-size:0.6rem;">N</span> Network bits</span>
+        <span><span class="bit-box bit-host" style="display:inline-flex;width:20px;height:16px;font-size:0.6rem;">H</span> Host bits</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step-by-Step Subnetting -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title">🧮 Subnetting Step-by-Step: 192.168.1.0/24 → 4 Subnets</div>
+    <p style="margin-bottom:16px;">Click each step to reveal the solution process:</p>
+
+    <div class="step-container">
+      <div class="step-card" id="step1">
+        <div class="step-header" onclick="toggleStep('step1')">
+          <div class="step-num">1</div>
+          <div class="step-title">Determine Bits to Borrow</div>
+        </div>
+        <div class="step-content" id="step1-content">
+          <p>We need <strong>4 subnets</strong>. Use the formula <code>2ⁿ = 4</code> → <code>n = 2</code></p>
+          <p>So we need to <strong style="color:var(--accent-orange);">borrow 2 bits</strong> from the host portion.</p>
+          <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:10px;font-family:var(--font-mono);font-size:0.85rem;margin-top:8px;">
+            2¹ = 2 subnets → need 2? No.<br>
+            <span style="color:var(--accent-green);">2² = 4 subnets → YES! Borrow 2 bits.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-card" id="step2">
+        <div class="step-header" onclick="toggleStep('step2')">
+          <div class="step-num">2</div>
+          <div class="step-title">Calculate New Prefix</div>
+        </div>
+        <div class="step-content" id="step2-content">
+          <p>Original prefix: <code>/24</code> (24 network bits)</p>
+          <p>Borrowed bits: <code>2</code></p>
+          <p>New prefix: <strong style="color:var(--accent-cyan);">/24 + 2 = /26</strong></p>
+          <table class="data-table" style="margin-top:8px;">
+            <thead><tr><th>Category</th><th>Before</th><th>After</th></tr></thead>
+            <tbody>
+              <tr><td>Network Bits</td><td>24</td><td style="color:var(--accent-cyan);">26</td></tr>
+              <tr><td>Host Bits</td><td>8</td><td style="color:var(--accent-green);">6</td></tr>
+              <tr><td>Subnet Mask</td><td>255.255.255.0</td><td style="color:var(--accent-cyan);">255.255.255.192</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="step-card" id="step3">
+        <div class="step-header" onclick="toggleStep('step3')">
+          <div class="step-num">3</div>
+          <div class="step-title">Calculate Hosts Per Subnet</div>
+        </div>
+        <div class="step-content" id="step3-content">
+          <p>Host bits remaining: <code>6</code></p>
+          <p>Formula: <code>2ʰ − 2 = 2⁶ − 2 = 64 − 2 = <strong style="color:var(--accent-green);">62 usable hosts</strong></code></p>
+          <div class="alert-box" style="margin-top:8px;">
+            <strong>Why subtract 2?</strong><br>
+            1 address reserved for <span style="color:var(--accent-blue);">Network ID</span> (first address)<br>
+            1 address reserved for <span style="color:var(--accent-red);">Broadcast</span> (last address)
+          </div>
+        </div>
+      </div>
+
+      <div class="step-card" id="step4">
+        <div class="step-header" onclick="toggleStep('step4')">
+          <div class="step-num">4</div>
+          <div class="step-title">Find Block Size</div>
+        </div>
+        <div class="step-content" id="step4-content">
+          <p>The block size tells us the increment between subnets.</p>
+          <p>In /26, the last octet of subnet mask is <code>192</code>.</p>
+          <p>Block size = <code>256 − 192 = <strong style="color:var(--accent-orange);">64</strong></code></p>
+          <p>Or: The last borrowed bit's positional value in an octet (128, 64, 32...) → 2nd bit = <strong style="color:var(--accent-orange);">64</strong></p>
+          <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:10px;font-family:var(--font-mono);font-size:0.8rem;margin-top:8px;line-height:1.8;">
+            Bit values: 128 | 64 | 32 | 16 | 8 | 4 | 2 | 1<br>
+            We borrowed bits 128 and <span style="color:var(--accent-orange);">64</span><br>
+            Last borrowed bit = <span style="color:var(--accent-orange);">64 → Block Size = 64</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-card" id="step5">
+        <div class="step-header" onclick="toggleStep('step5')">
+          <div class="step-num">5</div>
+          <div class="step-title">List All Subnet Ranges</div>
+        </div>
+        <div class="step-content" id="step5-content">
+          <p>Start at 0, increment by 64 until reaching 256:</p>
+          <div class="subnet-visual" style="margin-top:12px;">
+            <div class="subnet-block subnet-block-s1">
+              <div><span class="badge badge-green">Subnet 1</span><span style="color:var(--text-secondary);margin-left:8px;font-size:0.85rem;">192.168.1.0/26</span></div>
+              <div style="font-family:var(--font-mono);font-size:0.8rem;">
+                <span class="network">NET: .0</span> | 
+                <span style="color:var(--text-secondary);">HOST: .1-.62</span> | 
+                <span class="broadcast">BC: .63</span>
+              </div>
+            </div>
+            <div class="subnet-block subnet-block-s2">
+              <div><span class="badge badge-cyan">Subnet 2</span><span style="color:var(--text-secondary);margin-left:8px;font-size:0.85rem;">192.168.1.64/26</span></div>
+              <div style="font-family:var(--font-mono);font-size:0.8rem;">
+                <span class="network">NET: .64</span> | 
+                <span style="color:var(--text-secondary);">HOST: .65-.126</span> | 
+                <span class="broadcast">BC: .127</span>
+              </div>
+            </div>
+            <div class="subnet-block subnet-block-s3">
+              <div><span class="badge badge-orange">Subnet 3</span><span style="color:var(--text-secondary);margin-left:8px;font-size:0.85rem;">192.168.1.128/26</span></div>
+              <div style="font-family:var(--font-mono);font-size:0.8rem;">
+                <span class="network">NET: .128</span> | 
+                <span style="color:var(--text-secondary);">HOST: .129-.190</span> | 
+                <span class="broadcast">BC: .191</span>
+              </div>
+            </div>
+            <div class="subnet-block subnet-block-s4">
+              <div><span class="badge badge-red">Subnet 4</span><span style="color:var(--text-secondary);margin-left:8px;font-size:0.85rem;">192.168.1.192/26</span></div>
+              <div style="font-family:var(--font-mono);font-size:0.8rem;">
+                <span class="network">NET: .192</span> | 
+                <span style="color:var(--text-secondary);">HOST: .193-.254</span> | 
+                <span class="broadcast">BC: .255</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subnet Calculator -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title">🧪 Subnet Calculator Lab</div>
+    <p style="margin-bottom:16px;">Enter any network and number of subnets — get instant results:</p>
+
+    <div class="input-group">
+      <div class="input-row">
+        <span class="input-label">Network IP:</span>
+        <input type="text" class="styled-input" id="calc-ip" placeholder="192.168.1.0" value="192.168.1.0" style="width:180px;">
+      </div>
+      <div class="input-row">
+        <span class="input-label">CIDR Prefix:</span>
+        <input type="number" class="styled-input" id="calc-cidr" placeholder="24" value="24" min="8" max="30" style="width:100px;">
+        <span style="color:var(--text-dim);font-size:0.85rem;">(e.g. 24 for /24)</span>
+      </div>
+      <div class="input-row">
+        <span class="input-label">Subnets Needed:</span>
+        <input type="number" class="styled-input" id="calc-subnets" placeholder="4" value="4" min="2" max="64" style="width:100px;">
+      </div>
+    </div>
+    <button class="btn btn-green" onclick="calculateSubnets()" style="margin-top:8px;">⚡ Calculate Subnets</button>
+
+    <div id="calc-stats" class="stats-row" style="display:none;margin-top:16px;"></div>
+    <div id="subnet-results"></div>
+  </div>
+
+  <!-- Practice Mode -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title">🎯 Practice Mode — Random Questions</div>
+    <div class="quiz-card" id="quiz-container">
+      <div class="quiz-question" id="quiz-question">Loading question...</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+        <div>
+          <label class="input-label" style="display:block;margin-bottom:4px;">New Prefix (CIDR):</label>
+          <input type="number" class="styled-input" id="quiz-prefix" placeholder="/?" min="8" max="30" style="width:120px;">
+        </div>
+        <div>
+          <label class="input-label" style="display:block;margin-bottom:4px;">First Subnet Network:</label>
+          <input type="text" class="styled-input" id="quiz-subnet" placeholder="x.x.x.x" style="width:180px;">
+        </div>
+        <div>
+          <label class="input-label" style="display:block;margin-bottom:4px;">Hosts Per Subnet:</label>
+          <input type="number" class="styled-input" id="quiz-hosts" placeholder="?" style="width:120px;">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-green" onclick="checkAnswer()">✅ Check Answer</button>
+        <button class="btn btn-sm" onclick="generateQuestion()">🔀 New Question</button>
+        <button class="btn btn-orange btn-sm" onclick="showSolution()">💡 Show Solution</button>
+      </div>
+      <div class="answer-feedback" id="quiz-feedback"></div>
+    </div>
+  </div>
+
+  <!-- Common Mistakes -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title">⚠️ Common Subnetting Mistakes</div>
+    <div class="mistake-item">
+      <div class="mistake-title">❌ Forgetting to subtract 2 from hosts</div>
+      <div class="mistake-fix">Wrong: 2⁶ = 64 hosts. <strong>Correct: 2⁶ − 2 = 62 usable hosts.</strong> Always subtract Network ID and Broadcast.</div>
+    </div>
+    <div class="mistake-item">
+      <div class="mistake-title">❌ Wrong bit borrowing calculation</div>
+      <div class="mistake-fix">Need 5 subnets? 2² = 4 (not enough!). <strong>Must use 2³ = 8.</strong> Always round UP to next power of 2.</div>
+    </div>
+    <div class="mistake-item">
+      <div class="mistake-title">❌ Confusing block size with number of hosts</div>
+      <div class="mistake-fix">Block size = 64 means subnets start at 0, 64, 128, 192. <strong>Usable hosts = 62</strong> (not 64!).</div>
+    </div>
+    <div class="mistake-item">
+      <div class="mistake-title">❌ Not checking if there are enough host bits left</div>
+      <div class="mistake-fix">In /30, you have only 2 host bits → 2² − 2 = <strong>2 usable hosts.</strong> Check h > 0 before subnetting!</div>
+    </div>
+  </div>
+
+  <!-- Security Insight -->
+  <div class="card">
+    <div class="card-title">🔐 Security Benefits of Subnetting</div>
+    <div class="security-grid">
+      <div class="security-card">
+        <div class="security-card-icon">🧱</div>
+        <div class="security-card-title">Network Segmentation</div>
+        <div class="security-card-text">Divides the network into isolated zones. HR, Finance, and Guest on separate subnets — they can't talk without a router's permission.</div>
+      </div>
+      <div class="security-card">
+        <div class="security-card-icon">🛑</div>
+        <div class="security-card-title">Limits Attack Spread</div>
+        <div class="security-card-text">If malware infects one subnet, it's contained. Without subnetting, a single worm can spread across all 254 hosts instantly.</div>
+      </div>
+      <div class="security-card">
+        <div class="security-card-icon">🎯</div>
+        <div class="security-card-title">Better Firewall Control</div>
+        <div class="security-card-text">Firewall rules can be applied per-subnet. Block all traffic from Guest VLAN to Finance subnet with a single rule.</div>
+      </div>
+      <div class="security-card">
+        <div class="security-card-icon">📊</div>
+        <div class="security-card-title">Reduced Broadcast Traffic</div>
+        <div class="security-card-text">Smaller subnets = smaller broadcast domains = less network noise = better performance and easier monitoring.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 6: FULL PACKET JOURNEY -->
+<!-- ============================================================ -->
+<div class="section" id="s6">
+  <div class="section-title">Full Packet Journey</div>
+  <div class="section-subtitle">// Watch a packet travel from your PC to the internet and back</div>
+
+  <div class="card">
+    <div class="card-title">🚀 Packet Journey Simulator</div>
+    <p style="margin-bottom:16px;">Click "Simulate" to watch a ping packet travel across the entire network infrastructure:</p>
+    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+      <button class="btn btn-green" onclick="startJourney()">▶ Simulate Packet Journey</button>
+      <button class="btn btn-sm" onclick="resetJourney()">↺ Reset</button>
+    </div>
+
+    <div class="journey-track" id="journey-track">
+      <div class="journey-node" id="jn0">
+        <span class="journey-icon">💻</span>
+        <div class="journey-label">Your PC</div>
+        <div class="journey-ip">192.168.1.5</div>
+      </div>
+      <div class="journey-arrow" id="ja0"></div>
+      <div class="journey-node" id="jn1">
+        <span class="journey-icon">🔌</span>
+        <div class="journey-label">Switch</div>
+        <div class="journey-ip">Layer 2</div>
+      </div>
+      <div class="journey-arrow" id="ja1"></div>
+      <div class="journey-node" id="jn2">
+        <span class="journey-icon">📡</span>
+        <div class="journey-label">Router / Gateway</div>
+        <div class="journey-ip">192.168.1.1</div>
+      </div>
+      <div class="journey-arrow" id="ja2"></div>
+      <div class="journey-node" id="jn3">
+        <span class="journey-icon">🔄</span>
+        <div class="journey-label">NAT</div>
+        <div class="journey-ip">203.0.113.45</div>
+      </div>
+      <div class="journey-arrow" id="ja3"></div>
+      <div class="journey-node" id="jn4">
+        <span class="journey-icon">🏢</span>
+        <div class="journey-label">ISP Router</div>
+        <div class="journey-ip">Hop 1</div>
+      </div>
+      <div class="journey-arrow" id="ja4"></div>
+      <div class="journey-node" id="jn5">
+        <span class="journey-icon">🌍</span>
+        <div class="journey-label">Internet Core</div>
+        <div class="journey-ip">BGP Routing</div>
+      </div>
+      <div class="journey-arrow" id="ja5"></div>
+      <div class="journey-node" id="jn6">
+        <span class="journey-icon">🖥️</span>
+        <div class="journey-label">Target Server</div>
+        <div class="journey-ip">8.8.8.8</div>
+      </div>
+    </div>
+
+    <div class="explanation-box" id="journey-explain" style="margin-top:16px;"></div>
+  </div>
+
+  <!-- Layer behavior at each hop -->
+  <div class="card" style="margin-top:0;">
+    <div class="card-title">🔍 What Happens at Each Hop?</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+      <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:14px;">
+        <div style="font-size:1.5rem;margin-bottom:6px;">💻</div>
+        <div style="font-weight:700;color:var(--accent-cyan);margin-bottom:6px;">Your PC</div>
+        <ul style="font-size:0.82rem;">
+          <li>Creates ICMP Echo Request</li>
+          <li>DNS lookup for destination</li>
+          <li>TCP/IP stack builds packet</li>
+          <li>ARP to find gateway MAC</li>
+        </ul>
+      </div>
+      <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:14px;">
+        <div style="font-size:1.5rem;margin-bottom:6px;">🔌</div>
+        <div style="font-weight:700;color:var(--accent-cyan);margin-bottom:6px;">Switch (L2)</div>
+        <ul style="font-size:0.82rem;">
+          <li>Reads destination MAC</li>
+          <li>Forwards to correct port</li>
+          <li>No IP processing</li>
+          <li>Builds MAC table</li>
+        </ul>
+      </div>
+      <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:14px;">
+        <div style="font-size:1.5rem;margin-bottom:6px;">📡</div>
+        <div style="font-weight:700;color:var(--accent-cyan);margin-bottom:6px;">Router / NAT</div>
+        <ul style="font-size:0.82rem;">
+          <li>Reads destination IP</li>
+          <li>Checks routing table</li>
+          <li>NAT: replaces private IP</li>
+          <li>Decrements TTL</li>
+        </ul>
+      </div>
+      <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:14px;">
+        <div style="font-size:1.5rem;margin-bottom:6px;">🌍</div>
+        <div style="font-weight:700;color:var(--accent-cyan);margin-bottom:6px;">Internet Routers</div>
+        <ul style="font-size:0.82rem;">
+          <li>BGP routing decisions</li>
+          <li>Multiple hops</li>
+          <li>Each checks routing table</li>
+          <li>TTL decremented each hop</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 7: TROUBLESHOOTING LAB -->
+<!-- ============================================================ -->
+<div class="section" id="s7">
+  <div class="section-title">Troubleshooting Lab</div>
+  <div class="section-subtitle">// Diagnose and fix common network problems like a pro</div>
+
+  <div class="trouble-grid" style="margin-bottom:20px;">
+    <div class="trouble-card ping" onclick="runTrouble('ping')">
+      <div class="trouble-icon">📶</div>
+      <div class="trouble-title">Ping Test</div>
+      <div class="trouble-desc">Test basic connectivity to a host. Diagnose packet loss.</div>
+    </div>
+    <div class="trouble-card dns" onclick="runTrouble('dns')">
+      <div class="trouble-icon">🔍</div>
+      <div class="trouble-title">DNS Failure</div>
+      <div class="trouble-desc">Simulate a DNS resolution failure. Can ping IP but not domain?</div>
+    </div>
+    <div class="trouble-card gateway" onclick="runTrouble('gateway')">
+      <div class="trouble-icon">🚪</div>
+      <div class="trouble-title">Gateway Issue</div>
+      <div class="trouble-desc">Wrong or unreachable default gateway. Can't reach internet.</div>
+    </div>
+    <div class="trouble-card port" onclick="runTrouble('port')">
+      <div class="trouble-icon">🔌</div>
+      <div class="trouble-title">Port Analysis</div>
+      <div class="trouble-desc">Check active ports and connections with netstat.</div>
+    </div>
+  </div>
+
+  <div class="card" id="trouble-output-card" style="display:none;">
+    <div class="card-title" id="trouble-title">Output</div>
+    <div class="trouble-output visible" id="trouble-main-output"></div>
+    <div class="explanation-box visible" id="trouble-explanation" style="margin-top:12px;"></div>
+  </div>
+
+  <!-- Troubleshooting Reference -->
+  <div class="card">
+    <div class="card-title">📋 Troubleshooting Decision Tree</div>
+    <table class="data-table">
+      <thead><tr><th>Symptom</th><th>Likely Cause</th><th>Command to Try</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>No internet, no local</td>
+          <td style="color:var(--accent-red);">NIC/IP issue</td>
+          <td class="highlight">ipconfig /all</td>
+          <td>Check IP, renew DHCP: <code>ipconfig /renew</code></td>
+        </tr>
+        <tr>
+          <td>Local works, no internet</td>
+          <td style="color:var(--accent-orange);">Gateway issue</td>
+          <td class="highlight">ping 192.168.1.1</td>
+          <td>Verify default gateway config</td>
+        </tr>
+        <tr>
+          <td>IP works, domain doesn't</td>
+          <td style="color:var(--accent-orange);">DNS failure</td>
+          <td class="highlight">nslookup google.com</td>
+          <td>Change DNS to 8.8.8.8</td>
+        </tr>
+        <tr>
+          <td>Website unreachable</td>
+          <td style="color:var(--accent-cyan);">Port blocked</td>
+          <td class="highlight">netstat -an</td>
+          <td>Check firewall rules for port 443</td>
+        </tr>
+        <tr>
+          <td>Slow connection</td>
+          <td style="color:var(--accent-purple);">Routing issue</td>
+          <td class="highlight">tracert google.com</td>
+          <td>Identify slow hop, contact ISP</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Command Reference -->
+  <div class="card" style="margin-top:0;">
+    <div class="card-title">🛠️ Essential Commands Reference</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
+      <div>
+        <h4>🪟 Windows Commands</h4>
+        <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:14px;font-family:var(--font-mono);font-size:0.8rem;line-height:2;margin-top:8px;">
+          <div><span style="color:var(--accent-green);">ipconfig /all</span> <span style="color:var(--text-dim);">→ View IP & MAC</span></div>
+          <div><span style="color:var(--accent-green);">ping 8.8.8.8</span> <span style="color:var(--text-dim);">→ Test connectivity</span></div>
+          <div><span style="color:var(--accent-green);">tracert google.com</span> <span style="color:var(--text-dim);">→ Trace route</span></div>
+          <div><span style="color:var(--accent-green);">nslookup google.com</span> <span style="color:var(--text-dim);">→ DNS lookup</span></div>
+          <div><span style="color:var(--accent-green);">arp -a</span> <span style="color:var(--text-dim);">→ ARP cache</span></div>
+          <div><span style="color:var(--accent-green);">route print</span> <span style="color:var(--text-dim);">→ Routing table</span></div>
+          <div><span style="color:var(--accent-green);">netstat -an</span> <span style="color:var(--text-dim);">→ Active connections</span></div>
+        </div>
+      </div>
+      <div>
+        <h4>🐧 Linux / Mac Commands</h4>
+        <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:14px;font-family:var(--font-mono);font-size:0.8rem;line-height:2;margin-top:8px;">
+          <div><span style="color:var(--accent-cyan);">ifconfig / ip a</span> <span style="color:var(--text-dim);">→ View IP & MAC</span></div>
+          <div><span style="color:var(--accent-cyan);">ping -c 4 8.8.8.8</span> <span style="color:var(--text-dim);">→ Test connectivity</span></div>
+          <div><span style="color:var(--accent-cyan);">traceroute google.com</span> <span style="color:var(--text-dim);">→ Trace route</span></div>
+          <div><span style="color:var(--accent-cyan);">dig google.com</span> <span style="color:var(--text-dim);">→ DNS lookup</span></div>
+          <div><span style="color:var(--accent-cyan);">arp -n</span> <span style="color:var(--text-dim);">→ ARP cache</span></div>
+          <div><span style="color:var(--accent-cyan);">route -n</span> <span style="color:var(--text-dim);">→ Routing table</span></div>
+          <div><span style="color:var(--accent-cyan);">ss -tuln</span> <span style="color:var(--text-dim);">→ Active connections</span></div>
+        </div>
+      </div>
+      <div>
+        <h4>🦈 Wireshark Filters</h4>
+        <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:14px;font-family:var(--font-mono);font-size:0.8rem;line-height:2;margin-top:8px;">
+          <div><span style="color:var(--accent-orange);">icmp</span> <span style="color:var(--text-dim);">→ Ping traffic</span></div>
+          <div><span style="color:var(--accent-orange);">arp</span> <span style="color:var(--text-dim);">→ ARP broadcasts</span></div>
+          <div><span style="color:var(--accent-orange);">dns</span> <span style="color:var(--text-dim);">→ DNS queries</span></div>
+          <div><span style="color:var(--accent-orange);">tcp.port == 443</span> <span style="color:var(--text-dim);">→ HTTPS</span></div>
+          <div><span style="color:var(--accent-orange);">tcp.flags.syn == 1</span> <span style="color:var(--text-dim);">→ SYN packets</span></div>
+          <div><span style="color:var(--accent-orange);">ip.addr == x.x.x.x</span> <span style="color:var(--text-dim);">→ Filter by IP</span></div>
+          <div><span style="color:var(--accent-orange);">http</span> <span style="color:var(--text-dim);">→ HTTP traffic</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ====================================================
+// NAVIGATION
+// ====================================================
+const sectionOrder = ['s1','s2','s3','s4','s5','s6','s7'];
+let visitedSections = new Set(['s1']);
+
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  visitedSections.add(id);
+  updateProgress();
+  window.scrollTo(0, 0);
+}
+
+function updateProgress() {
+  const pct = Math.round((visitedSections.size / sectionOrder.length) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+}
+
+// ====================================================
+// OSI LAYERS
+// ====================================================
+function toggleLayer(el) {
+  const details = el.querySelector('.layer-details');
+  const isExpanded = el.classList.contains('expanded');
+  document.querySelectorAll('.osi-layer').forEach(l => {
+    l.classList.remove('expanded');
+    l.querySelector('.layer-details').classList.remove('visible');
+  });
+  if (!isExpanded) {
+    el.classList.add('expanded');
+    details.classList.add('visible');
+  }
+}
+
+// ====================================================
+// ENCAPSULATION ANIMATION
+// ====================================================
+function animateEncap() {
+  const layers = ['el7','el4','el3','el2','el1'];
+  layers.forEach(id => document.getElementById(id).classList.remove('active'));
+  let i = 0;
+  function next() {
+    if (i < layers.length) {
+      document.getElementById(layers[i]).classList.add('active');
+      i++;
+      setTimeout(next, 600);
+    }
+  }
+  next();
+}
+
+function resetEncap() {
+  ['el7','el4','el3','el2','el1'].forEach(id => document.getElementById(id).classList.remove('active'));
+}
+
+// ====================================================
+// TCP HANDSHAKE
+// ====================================================
+const hsData = {
+  1: {
+    clientState: 'SYN_SENT',
+    serverState: 'LISTEN',
+    explain: '<strong style="color:var(--accent-cyan)">Step 1 — SYN (Synchronize)</strong><br><br>Client sends a SYN packet to the server saying: "Hey, I want to connect! My sequence number starts at X."<br><br><strong>Flags:</strong> SYN=1, ACK=0<br><strong>Client State:</strong> SYN_SENT<br><strong>Analogy:</strong> You knock on someone\'s door.'
+  },
+  2: {
+    clientState: 'SYN_RCVD',
+    serverState: 'SYN_RCVD',
+    explain: '<strong style="color:var(--accent-orange)">Step 2 — SYN-ACK (Synchronize-Acknowledge)</strong><br><br>Server replies: "I received your SYN. My sequence number is Y. I\'m ready to connect!"<br><br><strong>Flags:</strong> SYN=1, ACK=1<br><strong>Server State:</strong> SYN_RCVD<br><strong>Analogy:</strong> The person says "Come in!"'
+  },
+  3: {
+    clientState: 'ESTABLISHED',
+    serverState: 'ESTABLISHED',
+    explain: '<strong style="color:var(--accent-green)">Step 3 — ACK (Acknowledge)</strong><br><br>Client confirms: "I got your SYN-ACK. Connection established! Let\'s start sending data."<br><br><strong>Flags:</strong> SYN=0, ACK=1<br><strong>Both States:</strong> ESTABLISHED<br><strong>Analogy:</strong> You step inside and start talking.'
+  }
+};
+
+let currentHsStep = 0;
+
+function hsStep(step) {
+  if (step <= currentHsStep + 1) {
+    currentHsStep = step;
+    const data = hsData[step];
+    document.getElementById('client-state').textContent = data.clientState;
+    document.getElementById('client-state').style.color = 'var(--accent-cyan)';
+    document.getElementById('server-state').textContent = data.serverState;
+    document.getElementById('server-state').style.color = 'var(--accent-green)';
+    
+    for (let i = 1; i <= step; i++) {
+      document.getElementById('hs-arrow'+i).classList.add('active');
+    }
+    
+    const box = document.getElementById('hs-explain');
+    box.innerHTML = data.explain;
+    box.classList.add('visible');
+    
+    document.getElementById('hs-btn'+step).classList.add('active-step');
+  }
+}
+
+function hsReset() {
+  currentHsStep = 0;
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById('hs-arrow'+i).classList.remove('active');
+    document.getElementById('hs-btn'+i).classList.remove('active-step');
+  }
+  document.getElementById('client-state').textContent = 'CLOSED';
+  document.getElementById('client-state').style.color = 'var(--text-dim)';
+  document.getElementById('server-state').textContent = 'LISTEN';
+  document.getElementById('server-state').style.color = 'var(--text-dim)';
+  document.getElementById('hs-explain').classList.remove('visible');
+}
+
+// ====================================================
+// ARP SIMULATION
+// ====================================================
+function runArpSim() {
+  const bc = document.getElementById('arp-broadcast');
+  const rp = document.getElementById('arp-reply');
+  const ex = document.getElementById('arp-explain');
+  bc.classList.remove('visible');
+  rp.classList.remove('visible');
+  setTimeout(() => bc.classList.add('visible'), 400);
+  setTimeout(() => rp.classList.add('visible'), 2000);
+  setTimeout(() => ex.classList.add('visible'), 2500);
+}
+
+function resetArp() {
+  document.getElementById('arp-broadcast').classList.remove('visible');
+  document.getElementById('arp-reply').classList.remove('visible');
+  document.getElementById('arp-explain').classList.remove('visible');
+}
+
+// ====================================================
+// TRACEROUTE SIMULATION
+// ====================================================
+const traceHops = [
+  { num: 1, ip: '192.168.1.1', ms: '1 ms', host: 'home-router.local [Default Gateway]' },
+  { num: 2, ip: '10.0.0.1', ms: '8 ms', host: 'isp-gateway.provider.net [ISP]' },
+  { num: 3, ip: '72.14.204.149', ms: '15 ms', host: 'isp-core-router.net' },
+  { num: 4, ip: '108.170.246.33', ms: '22 ms', host: 'google-backbone.net [Google]' },
+  { num: 5, ip: '142.251.49.78', ms: '28 ms', host: 'google-datacenter.net' },
+  { num: 6, ip: '8.8.8.8', ms: '31 ms', host: 'dns.google [Destination] ✅' },
+];
+
+function runTraceroute() {
+  const out = document.getElementById('trace-output');
+  out.innerHTML = '<span style="color:var(--accent-cyan);">Tracing route to google.com [8.8.8.8]</span>\n<span style="color:var(--text-dim);">over a maximum of 30 hops:\n</span>';
+  
+  traceHops.forEach((hop, i) => {
+    setTimeout(() => {
+      const color = hop.num === 6 ? 'var(--accent-green)' : 'var(--text-secondary)';
+      out.innerHTML += `<span style="color:var(--accent-cyan);">${hop.num}</span>   <span style="color:var(--accent-orange);">${hop.ms}</span>  <span style="color:${color};">${hop.ip}</span>  <span style="color:var(--text-dim);">${hop.host}</span>\n`;
+    }, i * 700);
+  });
+
+  setTimeout(() => {
+    out.innerHTML += '\n<span style="color:var(--accent-green);">Trace complete. 6 hops to destination.</span>';
+  }, traceHops.length * 700 + 500);
+}
+
+function resetTrace() {
+  document.getElementById('trace-output').innerHTML = '<span style="color:var(--text-dim);">// Click "Trace Packet" to simulate traceroute</span>';
+}
+
+// ====================================================
+// STEP-BY-STEP SUBNETTING
+// ====================================================
+function toggleStep(id) {
+  const card = document.getElementById(id);
+  const content = document.getElementById(id + '-content');
+  const isOpen = card.classList.contains('active');
+  
+  document.querySelectorAll('.step-card').forEach(c => {
+    c.classList.remove('active');
+    c.querySelector('.step-content').classList.remove('open');
+  });
+  
+  if (!isOpen) {
+    card.classList.add('active');
+    content.classList.add('open');
+  }
+}
+
+// Auto-open step 1
+window.addEventListener('load', () => {
+  setTimeout(() => toggleStep('step1'), 500);
+  generateQuestion();
+  updateCidr(24);
+});
+
+// ====================================================
+// CIDR SLIDER
+// ====================================================
+function updateCidr(val) {
+  val = parseInt(val);
+  document.getElementById('cidr-val').textContent = val;
+  
+  const hostBits = 32 - val;
+  const hosts = Math.pow(2, hostBits) - 2;
+  
+  // Build subnet mask
+  let maskBits = '';
+  for (let i = 0; i < 32; i++) maskBits += (i < val ? '1' : '0');
+  const octets = [];
+  for (let i = 0; i < 4; i++) octets.push(parseInt(maskBits.substr(i*8, 8), 2));
+  const mask = octets.join('.');
+  
+  document.getElementById('cs-netbits').textContent = val;
+  document.getElementById('cs-hostbits').textContent = hostBits;
+  document.getElementById('cs-hosts').textContent = hosts < 0 ? 0 : hosts;
+  document.getElementById('cs-mask').textContent = mask;
+  
+  // Bit display
+  const bd = document.getElementById('bit-display');
+  bd.innerHTML = '';
+  for (let i = 0; i < 32; i++) {
+    if (i > 0 && i % 8 === 0) {
+      const sep = document.createElement('div');
+      sep.className = 'bit-box bit-sep';
+      sep.textContent = '.';
+      bd.appendChild(sep);
+    }
+    const bit = document.createElement('div');
+    bit.className = 'bit-box ' + (i < val ? 'bit-net' : 'bit-host');
+    bit.textContent = i < val ? 'N' : 'H';
+    bd.appendChild(bit);
+  }
+}
+
+// ====================================================
+// SUBNET CALCULATOR
+// ====================================================
+function ipToNum(ip) {
+  return ip.split('.').reduce((acc, oct) => (acc << 8) + parseInt(oct), 0) >>> 0;
+}
+
+function numToIp(num) {
+  return [(num >>> 24) & 255, (num >>> 16) & 255, (num >>> 8) & 255, num & 255].join('.');
+}
+
+function calculateSubnets() {
+  const ip = document.getElementById('calc-ip').value.trim();
+  const cidr = parseInt(document.getElementById('calc-cidr').value);
+  const needed = parseInt(document.getElementById('calc-subnets').value);
+  
+  if (!ip.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/)) {
+    alert('Please enter a valid IP address (e.g. 192.168.1.0)');
+    return;
+  }
+  
+  // Find bits to borrow
+  let bits = 0;
+  while (Math.pow(2, bits) < needed) bits++;
+  
+  const newCidr = cidr + bits;
+  if (newCidr > 30) {
+    alert('Not enough bits! Try fewer subnets or a smaller prefix.');
+    return;
+  }
+  
+  const hostBits = 32 - newCidr;
+  const blockSize = Math.pow(2, hostBits);
+  const usableHosts = blockSize - 2;
+  const totalSubnets = Math.pow(2, bits);
+  
+  // Mask
+  let maskNum = 0;
+  for (let i = 0; i < newCidr; i++) maskNum |= (1 << (31 - i));
+  maskNum = maskNum >>> 0;
+  
+  const baseIpNum = ipToNum(ip) & maskNum;
+  
+  // Show stats
+  const stats = document.getElementById('calc-stats');
+  stats.style.display = 'grid';
+  stats.innerHTML = `
+    <div class="stat-box"><span class="stat-value">${totalSubnets}</span><span class="stat-label">Subnets Created</span></div>
+    <div class="stat-box"><span class="stat-value">${usableHosts}</span><span class="stat-label">Hosts Per Subnet</span></div>
+    <div class="stat-box"><span class="stat-value" style="font-size:1rem;">/${newCidr}</span><span class="stat-label">New Prefix</span></div>
+    <div class="stat-box"><span class="stat-value">${bits}</span><span class="stat-label">Bits Borrowed</span></div>
+  `;
+  
+  // Generate table
+  let html = `<table class="data-table" style="margin-top:16px;">
+    <thead><tr><th>#</th><th>Network Address</th><th>First Host</th><th>Last Host</th><th>Broadcast</th><th>Hosts</th></tr></thead>
+    <tbody>`;
+  
+  const colors = ['subnet-block-s1','subnet-block-s2','subnet-block-s3','subnet-block-s4','subnet-block-s5','subnet-block-s6','subnet-block-s7','subnet-block-s8'];
+  
+  for (let i = 0; i < totalSubnets; i++) {
+    const netNum = (baseIpNum + i * blockSize) >>> 0;
+    const bcNum = (netNum + blockSize - 1) >>> 0;
+    const firstHost = (netNum + 1) >>> 0;
+    const lastHost = (bcNum - 1) >>> 0;
+    
+    html += `<tr>
+      <td><span class="badge badge-cyan">S${i+1}</span></td>
+      <td class="network">${numToIp(netNum)}/${newCidr}</td>
+      <td class="highlight">${numToIp(firstHost)}</td>
+      <td class="highlight">${numToIp(lastHost)}</td>
+      <td class="broadcast">${numToIp(bcNum)}</td>
+      <td style="color:var(--text-secondary);">${usableHosts}</td>
+    </tr>`;
+  }
+  
+  html += '</tbody></table>';
+  document.getElementById('subnet-results').innerHTML = html;
+}
+
+// ====================================================
+// PRACTICE MODE
+// ====================================================
+let currentQuestion = null;
+
+function generateQuestion() {
+  const baseNets = ['192.168.0.0','192.168.1.0','192.168.10.0','10.0.0.0','172.16.0.0'];
+  const cidrs = [24, 24, 24, 16, 16];
+  const subnets = [2, 4, 8, 2, 4];
+  
+  const idx = Math.floor(Math.random() * baseNets.length);
+  const baseNet = baseNets[idx];
+  const baseCidr = cidrs[idx];
+  const neededSubnets = subnets[Math.floor(Math.random() * subnets.length)];
+  
+  let bits = 0;
+  while (Math.pow(2, bits) < neededSubnets) bits++;
+  const newCidr = baseCidr + bits;
+  const hostBits = 32 - newCidr;
+  const blockSize = Math.pow(2, hostBits);
+  const usableHosts = blockSize - 2;
+  
+  currentQuestion = {
+    network: baseNet,
+    baseCidr,
+    neededSubnets,
+    newCidr,
+    usableHosts,
+    firstSubnet: baseNet
+  };
+  
+  document.getElementById('quiz-question').textContent = 
+    `Divide ${baseNet}/${baseCidr} into ${neededSubnets} equal subnets.`;
+  
+  document.getElementById('quiz-prefix').value = '';
+  document.getElementById('quiz-subnet').value = '';
+  document.getElementById('quiz-hosts').value = '';
+  document.getElementById('quiz-feedback').classList.remove('visible','correct','incorrect');
+}
+
+function checkAnswer() {
+  if (!currentQuestion) return;
+  const q = currentQuestion;
+  const userPrefix = parseInt(document.getElementById('quiz-prefix').value);
+  const userSubnet = document.getElementById('quiz-subnet').value.trim();
+  const userHosts = parseInt(document.getElementById('quiz-hosts').value);
+  
+  const fb = document.getElementById('quiz-feedback');
+  
+  const prefixOk = userPrefix === q.newCidr;
+  const subnetOk = userSubnet === q.firstSubnet;
+  const hostsOk = userHosts === q.usableHosts;
+  
+  if (prefixOk && subnetOk && hostsOk) {
+    fb.className = 'answer-feedback visible correct';
+    fb.innerHTML = `✅ <strong>Correct!</strong> /${q.newCidr} prefix, first subnet ${q.firstSubnet}, ${q.usableHosts} usable hosts. Well done!`;
+  } else {
+    fb.className = 'answer-feedback visible incorrect';
+    let hint = '❌ Not quite. ';
+    if (!prefixOk) hint += `Prefix should be /${q.newCidr}. `;
+    if (!subnetOk) hint += `First subnet should be ${q.firstSubnet}. `;
+    if (!hostsOk) hint += `Hosts per subnet should be ${q.usableHosts}. `;
+    fb.innerHTML = hint;
+  }
+  fb.classList.add('visible');
+}
+
+function showSolution() {
+  if (!currentQuestion) return;
+  const q = currentQuestion;
+  const fb = document.getElementById('quiz-feedback');
+  
+  let bits = q.newCidr - q.baseCidr;
+  const blockSize = Math.pow(2, 32 - q.newCidr);
+  
+  fb.className = 'answer-feedback visible';
+  fb.style.borderLeftColor = 'var(--accent-purple)';
+  fb.style.background = 'rgba(124,58,237,0.1)';
+  fb.style.color = 'var(--text-primary)';
+  fb.innerHTML = `
+    <strong style="color:var(--accent-purple);">💡 Solution:</strong><br>
+    1. Need ${q.neededSubnets} subnets → 2<sup>${bits}</sup> = ${Math.pow(2,bits)} → Borrow <strong>${bits} bits</strong><br>
+    2. New prefix: /${q.baseCidr} + ${bits} = <strong>/${q.newCidr}</strong><br>
+    3. Host bits: ${32 - q.newCidr} → 2<sup>${32-q.newCidr}</sup> - 2 = <strong>${q.usableHosts} usable hosts</strong><br>
+    4. Block size: <strong>${blockSize}</strong> (subnets increment by ${blockSize})<br>
+    5. First subnet: <strong>${q.firstSubnet}/${q.newCidr}</strong>
+  `;
+}
+
+// ====================================================
+// PACKET JOURNEY
+// ====================================================
+const journeyExplanations = [
+  '💻 <strong>Step 1 — Your PC:</strong> Creates ICMP Echo Request. ARP resolves gateway MAC. TCP/IP stack builds the packet with source IP 192.168.1.5.',
+  '🔌 <strong>Step 2 — Switch (L2):</strong> Reads destination MAC address from the frame. Forwards to the correct port. No IP processing here — pure Layer 2.',
+  '📡 <strong>Step 3 — Router / NAT:</strong> Reads destination IP. Checks routing table. NAT replaces private IP (192.168.1.5) with public IP (203.0.113.45). Decrements TTL.',
+  '🔄 <strong>Step 4 — After NAT:</strong> Packet now has public IP. Router consults routing table and sends to ISP. Internal network is hidden from internet.',
+  '🏢 <strong>Step 5 — ISP Router:</strong> BGP routing kicks in. Router checks routing table and forwards toward Google\'s ASN. TTL decremented.',
+  '🌍 <strong>Step 6 — Internet Core:</strong> Multiple hops through backbone routers. Each router reads only the IP header and forwards. Data is never modified.',
+  '🖥️ <strong>Step 7 — Target Server (8.8.8.8):</strong> Packet arrives! Server sends ICMP Echo Reply back. The reverse journey begins through the same path.',
+];
+
+let journeyRunning = false;
+
+function startJourney() {
+  if (journeyRunning) return;
+  journeyRunning = true;
+  resetJourney();
+  
+  const explain = document.getElementById('journey-explain');
+  
+  for (let i = 0; i < 7; i++) {
+    setTimeout(() => {
+      document.getElementById('jn' + i).classList.add('active');
+      if (i < 6) document.getElementById('ja' + i).classList.add('active');
+      explain.innerHTML = journeyExplanations[i];
+      explain.classList.add('visible');
+    }, i * 900);
+  }
+  
+  setTimeout(() => {
+    journeyRunning = false;
+  }, 7 * 900);
+}
+
+function resetJourney() {
+  for (let i = 0; i < 7; i++) {
+    document.getElementById('jn' + i).classList.remove('active');
+    if (i < 6) document.getElementById('ja' + i).classList.remove('active');
+  }
+  document.getElementById('journey-explain').classList.remove('visible');
+  journeyRunning = false;
+}
+
+// ====================================================
+// TROUBLESHOOTING LAB
+// ====================================================
+const troubleData = {
+  ping: {
+    title: '📶 Ping Test — Connectivity Check',
+    output: `<span class="t-info">C:\\> ping 8.8.8.8</span>
+
+<span class="t-info">Pinging 8.8.8.8 with 32 bytes of data:</span>
+<span class="t-ok">Reply from 8.8.8.8: bytes=32 time=28ms TTL=118</span>
+<span class="t-ok">Reply from 8.8.8.8: bytes=32 time=31ms TTL=118</span>
+<span class="t-ok">Reply from 8.8.8.8: bytes=32 time=29ms TTL=118</span>
+<span class="t-ok">Reply from 8.8.8.8: bytes=32 time=30ms TTL=118</span>
+
+<span class="t-info">Ping statistics for 8.8.8.8:</span>
+<span class="t-ok">    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)</span>
+<span class="t-ok">✅ RESULT: Network connectivity is WORKING</span>`,
+    explain: `<strong>🟢 Connectivity Confirmed!</strong><br><br>
+    <strong>What we learned:</strong><br>
+    ✅ NIC is working<br>
+    ✅ IP configuration is correct<br>
+    ✅ Default gateway is reachable<br>
+    ✅ ISP connection is working<br>
+    ✅ Remote server (8.8.8.8) is responding<br><br>
+    <strong>If this FAILS:</strong> Check your IP config (ipconfig /all), verify gateway, check cables.`
+  },
+  dns: {
+    title: '🔍 DNS Failure — Name Resolution Issue',
+    output: `<span class="t-info">C:\\> ping 8.8.8.8</span>
+<span class="t-ok">Reply from 8.8.8.8: bytes=32 time=28ms ✅ IP works!</span>
+
+<span class="t-info">C:\\> ping www.google.com</span>
+<span class="t-err">Ping request could not find host www.google.com.</span>
+<span class="t-err">Please check the name and try again.</span>
+
+<span class="t-info">C:\\> nslookup google.com</span>
+<span class="t-err">DNS request timed out.</span>
+<span class="t-err">timeout was 2 seconds.</span>
+<span class="t-err">Server: Unknown</span>
+<span class="t-err">Address: 192.168.1.1</span>
+<span class="t-warn">❌ RESULT: DNS server is not responding!</span>`,
+    explain: `<strong>🟠 DNS Failure Detected!</strong><br><br>
+    <strong>Diagnosis:</strong><br>
+    ✅ IP connectivity works (ping 8.8.8.8 succeeds)<br>
+    ❌ Domain name resolution fails<br>
+    ❌ DNS server not responding<br><br>
+    <strong>Fix:</strong><br>
+    1. Change DNS to 8.8.8.8 or 1.1.1.1 in network settings<br>
+    2. Flush DNS cache: <code>ipconfig /flushdns</code><br>
+    3. Restart DNS service or router`
+  },
+  gateway: {
+    title: '🚪 Gateway Issue — Can\'t Reach Internet',
+    output: `<span class="t-info">C:\\> ipconfig</span>
+<span class="t-ok">IPv4 Address: 192.168.1.50</span>
+<span class="t-warn">Default Gateway: 192.168.1.200  ← WRONG!</span>
+
+<span class="t-info">C:\\> ping 192.168.1.200</span>
+<span class="t-err">Request timed out.</span>
+<span class="t-err">Request timed out.</span>
+
+<span class="t-info">C:\\> ping 8.8.8.8</span>
+<span class="t-err">PING: transmit failed. General failure.</span>
+
+<span class="t-info">C:\\> route print</span>
+<span class="t-warn">0.0.0.0   192.168.1.200   ← Dead gateway!</span>
+<span class="t-err">❌ RESULT: Gateway unreachable — no internet!</span>`,
+    explain: `<strong>🔴 Gateway Misconfiguration!</strong><br><br>
+    <strong>Diagnosis:</strong><br>
+    ❌ Default gateway set to wrong/unreachable IP<br>
+    ❌ All internet-bound packets have no exit point<br>
+    ✅ Local network may still work<br><br>
+    <strong>Fix:</strong><br>
+    1. Set correct gateway: should be 192.168.1.1 (router IP)<br>
+    2. Renew DHCP: <code>ipconfig /release && ipconfig /renew</code><br>
+    3. Check if router is powered on and accessible`
+  },
+  port: {
+    title: '🔌 Port Analysis — Active Connections',
+    output: `<span class="t-info">C:\\> netstat -an</span>
+
+<span class="t-info">Active Connections</span>
+
+<span class="t-info">  Proto  Local Address     Foreign Address   State</span>
+<span class="t-ok">  TCP    192.168.1.5:80    0.0.0.0:0         LISTENING</span>
+<span class="t-ok">  TCP    192.168.1.5:443   0.0.0.0:0         LISTENING</span>
+<span class="t-ok">  TCP    192.168.1.5:52413 8.8.8.8:443       ESTABLISHED</span>
+<span class="t-warn">  TCP    192.168.1.5:1337  45.33.32.156:0    SYN_SENT   ← SUSPICIOUS!</span>
+<span class="t-ok">  UDP    192.168.1.5:53    *:*</span>
+<span class="t-ok">  UDP    192.168.1.5:67    *:*</span>
+
+<span class="t-warn">⚠️  Suspicious outbound connection on port 1337 detected!
+    45.33.32.156 is a known Shodan scanner IP.</span>`,
+    explain: `<strong>🟡 Security Alert — Suspicious Port Activity!</strong><br><br>
+    <strong>What we see:</strong><br>
+    ✅ Port 443 — Normal HTTPS<br>
+    ✅ Port 53 — Normal DNS (UDP)<br>
+    ⚠️ Port 1337 — Non-standard port, possible C2 or scan<br><br>
+    <strong>Wireshark filter to investigate:</strong><br>
+    <code>tcp.port == 1337</code><br><br>
+    <strong>Actions:</strong><br>
+    1. Block port 1337 in firewall<br>
+    2. Run malware scan<br>
+    3. Monitor traffic with Wireshark`
+  }
+};
+
+function runTrouble(type) {
+  const data = troubleData[type];
+  const card = document.getElementById('trouble-output-card');
+  card.style.display = 'block';
+  document.getElementById('trouble-title').textContent = data.title;
+  document.getElementById('trouble-main-output').innerHTML = data.output;
+  document.getElementById('trouble-explanation').innerHTML = data.explain;
+  card.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Init progress
+updateProgress();
+</script>
+</body>
+</html>
