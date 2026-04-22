@@ -1,0 +1,1934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetLearn — IP & Subnetting Masterclass</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: #1f2d45;
+  --cyan: #00e5ff;
+  --green: #00ff88;
+  --orange: #ff6b35;
+  --purple: #9b59ff;
+  --yellow: #ffd60a;
+  --red: #ff4757;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --font-head: 'Syne', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --font-body: 'Inter', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── GRID BACKGROUND ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  width: 260px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  z-index: 100;
+  overflow-y: auto;
+  padding: 24px 0;
+  transition: transform .3s ease;
+}
+
+.sidebar-logo {
+  padding: 0 20px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.sidebar-logo h1 {
+  font-family: var(--font-head);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--cyan);
+}
+.sidebar-logo span { color: var(--muted); font-size: .75rem; display: block; margin-top: 2px; }
+
+.nav-section {
+  padding: 4px 12px;
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin: 12px 0 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: .85rem;
+  color: var(--muted);
+  border-left: 3px solid transparent;
+  transition: all .15s ease;
+}
+.nav-item:hover { color: var(--text); background: rgba(255,255,255,.04); }
+.nav-item.active { color: var(--cyan); border-left-color: var(--cyan); background: rgba(0,229,255,.06); }
+.nav-item .badge {
+  margin-left: auto;
+  font-size: .65rem;
+  background: var(--border);
+  color: var(--muted);
+  padding: 2px 7px;
+  border-radius: 99px;
+}
+.nav-item.active .badge { background: rgba(0,229,255,.15); color: var(--cyan); }
+
+/* ── MAIN ── */
+#main {
+  margin-left: 260px;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position: sticky;
+  top: 0;
+  background: rgba(10,14,26,.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 50;
+}
+.topbar .breadcrumb { font-size: .8rem; color: var(--muted); }
+.topbar .breadcrumb span { color: var(--cyan); }
+
+/* progress bar */
+.progress-track {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .75rem;
+  color: var(--muted);
+}
+.progress-bar-outer {
+  width: 120px;
+  height: 5px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progress-bar-inner {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+  border-radius: 99px;
+  transition: width .5s ease;
+}
+
+/* ── CONTENT PANE ── */
+.content-pane {
+  display: none;
+  padding: 48px 40px 80px;
+  max-width: 900px;
+  animation: fadeIn .3s ease;
+}
+.content-pane.active { display: block; }
+
+@keyframes fadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+
+/* ── MODULE HEADER ── */
+.module-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .7rem;
+  font-family: var(--font-mono);
+  letter-spacing: .1em;
+  color: var(--cyan);
+  background: rgba(0,229,255,.1);
+  border: 1px solid rgba(0,229,255,.2);
+  padding: 5px 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.module-title {
+  font-family: var(--font-head);
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 12px;
+}
+.module-title em { font-style: normal; color: var(--cyan); }
+
+.module-sub {
+  color: var(--muted);
+  font-size: 1rem;
+  margin-bottom: 40px;
+  line-height: 1.7;
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.card-head {
+  font-family: var(--font-head);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* ── CONCEPT BOX ── */
+.concept-box {
+  background: linear-gradient(135deg, rgba(0,229,255,.07), rgba(0,255,136,.05));
+  border: 1px solid rgba(0,229,255,.2);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+.concept-label {
+  font-size: .65rem;
+  font-family: var(--font-mono);
+  letter-spacing: .12em;
+  color: var(--cyan);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.concept-text {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--text);
+}
+
+/* ── ANALOGY BOX ── */
+.analogy-box {
+  background: rgba(255,107,53,.07);
+  border: 1px solid rgba(255,107,53,.2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  display: flex;
+  gap: 14px;
+}
+.analogy-icon { font-size: 1.6rem; line-height: 1; }
+.analogy-content { flex: 1; }
+.analogy-label { font-size: .65rem; font-family: var(--font-mono); letter-spacing: .1em; color: var(--orange); text-transform: uppercase; margin-bottom: 5px; }
+.analogy-text { font-size: .95rem; line-height: 1.7; }
+
+/* ── IP BITS DISPLAY ── */
+.ip-display {
+  font-family: var(--font-mono);
+  font-size: .95rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.ip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.ip-row:last-child { margin-bottom: 0; }
+.octet-group { display: flex; gap: 3px; }
+.bit-cell {
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .75rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+}
+.bit-network { background: rgba(0,229,255,.15); border-color: rgba(0,229,255,.3); color: var(--cyan); }
+.bit-host { background: rgba(0,255,136,.1); border-color: rgba(0,255,136,.25); color: var(--green); }
+.bit-borrowed { background: rgba(255,107,53,.15); border-color: rgba(255,107,53,.3); color: var(--orange); }
+.ip-sep { color: var(--muted); font-size: .9rem; }
+.ip-label-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
+.ip-label { display: flex; align-items: center; gap: 6px; font-size: .75rem; color: var(--muted); }
+.ip-label-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+/* ── STEP BOX ── */
+.steps-container { counter-reset: step; }
+.step-item {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 28px;
+  position: relative;
+}
+.step-item:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 40px;
+  bottom: -14px;
+  width: 2px;
+  background: linear-gradient(var(--border), transparent);
+}
+.step-num {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 2px solid var(--cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--cyan);
+  flex-shrink: 0;
+}
+.step-body { flex: 1; padding-top: 6px; }
+.step-title { font-family: var(--font-head); font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+.step-desc { font-size: .9rem; line-height: 1.7; color: var(--muted); }
+.step-desc strong { color: var(--text); }
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  font-family: var(--font-mono);
+  font-size: .82rem;
+  color: #a6e22e;
+  margin: 12px 0;
+  overflow-x: auto;
+  line-height: 1.7;
+}
+.code-block .c-cyan { color: var(--cyan); }
+.code-block .c-orange { color: var(--orange); }
+.code-block .c-muted { color: var(--muted); }
+.code-block .c-green { color: var(--green); }
+
+/* ── TABLE ── */
+.neat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
+  margin-bottom: 24px;
+}
+.neat-table thead th {
+  background: var(--surface2);
+  padding: 10px 16px;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: .75rem;
+  color: var(--cyan);
+  letter-spacing: .07em;
+  border-bottom: 1px solid var(--border);
+}
+.neat-table tbody td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+}
+.neat-table tbody tr:hover td { background: rgba(255,255,255,.02); color: var(--text); }
+.neat-table tbody td strong { color: var(--text); }
+.neat-table .tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: .7rem;
+  font-family: var(--font-mono);
+}
+.tag-a { background: rgba(0,229,255,.15); color: var(--cyan); }
+.tag-b { background: rgba(155,89,255,.15); color: var(--purple); }
+.tag-c { background: rgba(0,255,136,.12); color: var(--green); }
+
+/* ── SUBNET VISUAL ── */
+.subnet-visual {
+  position: relative;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.subnet-visual-title {
+  font-family: var(--font-mono);
+  font-size: .75rem;
+  color: var(--muted);
+  margin-bottom: 20px;
+  letter-spacing: .07em;
+}
+.subnet-bar-track {
+  display: flex;
+  height: 50px;
+  border-radius: 8px;
+  overflow: hidden;
+  gap: 2px;
+  margin-bottom: 16px;
+}
+.subnet-bar-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .7rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: white;
+  min-width: 0;
+  transition: all .4s ease;
+  flex: 1;
+  text-align: center;
+}
+.seg1 { background: linear-gradient(135deg, #0078ff, #00b4d8); }
+.seg2 { background: linear-gradient(135deg, #7928ca, #9b59ff); }
+.seg3 { background: linear-gradient(135deg, #00b07c, #00ff88); color: var(--bg); }
+.seg4 { background: linear-gradient(135deg, #ff6b35, #ff4757); }
+
+.subnet-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.subnet-detail-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: .8rem;
+}
+.subnet-detail-card .sn-title {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  color: var(--cyan);
+  margin-bottom: 8px;
+}
+.subnet-detail-card .sn-net { color: var(--orange); font-family: var(--font-mono); font-size: .8rem; }
+.subnet-detail-card .sn-bc  { color: var(--red); font-family: var(--font-mono); font-size: .8rem; }
+.subnet-detail-card .sn-range{ color: var(--green); font-family: var(--font-mono); font-size: .8rem; }
+.subnet-detail-card .sn-lbl { color: var(--muted); font-size: .7rem; margin-bottom: 2px; }
+
+/* ── FORMULA CARD ── */
+.formula-card {
+  background: linear-gradient(135deg, rgba(155,89,255,.1), rgba(0,229,255,.07));
+  border: 1px solid rgba(155,89,255,.3);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+.formula-big {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--purple);
+  margin-bottom: 8px;
+}
+.formula-big sup { font-size: 1.2rem; }
+.formula-label { color: var(--muted); font-size: .85rem; }
+.formula-why {
+  background: rgba(255,255,255,.04);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  font-size: .85rem;
+  line-height: 1.7;
+  text-align: left;
+  color: var(--muted);
+}
+.formula-why strong { color: var(--text); }
+
+/* ── INTERACTIVE CALCULATOR ── */
+.calc-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.calc-header {
+  padding: 16px 24px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-head);
+  font-size: .95rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.calc-body { padding: 24px; }
+.input-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.input-group { flex: 1; min-width: 160px; }
+.input-group label {
+  display: block;
+  font-size: .72rem;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  letter-spacing: .08em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.input-group input, .input-group select {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: .9rem;
+  outline: none;
+  transition: border-color .15s;
+}
+.input-group input:focus, .input-group select:focus { border-color: var(--cyan); }
+.btn-calc {
+  background: linear-gradient(135deg, var(--cyan), var(--green));
+  border: none;
+  border-radius: 8px;
+  padding: 11px 24px;
+  font-family: var(--font-head);
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--bg);
+  cursor: pointer;
+  transition: opacity .2s, transform .1s;
+  letter-spacing: .03em;
+}
+.btn-calc:hover { opacity: .9; }
+.btn-calc:active { transform: scale(.97); }
+.calc-result {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  display: none;
+  font-family: var(--font-mono);
+  font-size: .82rem;
+}
+.calc-result.show { display: block; animation: fadeIn .3s ease; }
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.result-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+.result-item .r-label { font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
+.result-item .r-value { font-size: .95rem; color: var(--cyan); font-weight: 700; }
+
+/* ── QUIZ ── */
+.quiz-question {
+  font-size: .95rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--text);
+  line-height: 1.6;
+}
+.quiz-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.quiz-option {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: .88rem;
+  transition: all .15s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+}
+.quiz-option:hover { border-color: var(--cyan); color: var(--text); background: rgba(0,229,255,.04); }
+.quiz-option.correct { border-color: var(--green); background: rgba(0,255,136,.1); color: var(--green); }
+.quiz-option.wrong { border-color: var(--red); background: rgba(255,71,87,.1); color: var(--red); }
+.quiz-option.disabled { pointer-events: none; }
+.quiz-opt-letter {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: inherit;
+}
+.quiz-option.correct .quiz-opt-letter { background: var(--green); color: var(--bg); }
+.quiz-option.wrong .quiz-opt-letter { background: var(--red); color: white; }
+.quiz-feedback {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: .85rem;
+  line-height: 1.6;
+  display: none;
+  margin-bottom: 12px;
+}
+.quiz-feedback.show { display: block; animation: fadeIn .2s ease; }
+.quiz-feedback.ok { background: rgba(0,255,136,.1); border: 1px solid rgba(0,255,136,.2); color: var(--green); }
+.quiz-feedback.fail { background: rgba(255,71,87,.1); border: 1px solid rgba(255,71,87,.2); color: #ff8fa0; }
+.btn-next { background: none; border: 1px solid var(--border); border-radius: 7px; padding: 8px 18px; color: var(--muted); font-size: .82rem; cursor: pointer; transition: all .15s; margin-top: 4px; }
+.btn-next:hover { border-color: var(--cyan); color: var(--cyan); }
+
+/* ── PACKET ANIMATION ── */
+.packet-demo {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.packet-track {
+  position: relative;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.packet-node {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: .6rem;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  gap: 3px;
+  position: relative;
+  z-index: 2;
+  background: var(--surface);
+  transition: all .3s ease;
+}
+.packet-node .pn-icon { font-size: 1.2rem; }
+.packet-node.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,.08); box-shadow: 0 0 16px rgba(0,229,255,.2); }
+.packet-node.reached { border-color: var(--green); color: var(--green); background: rgba(0,255,136,.08); }
+.packet-line {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.packet-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--cyan);
+  border-radius: 50%;
+  top: -4px;
+  left: -20px;
+  box-shadow: 0 0 8px var(--cyan);
+  transition: left .5s ease;
+}
+.packet-label {
+  text-align: center;
+  font-size: .8rem;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.btn-demo { background: var(--surface); border: 1px solid var(--cyan); border-radius: 7px; color: var(--cyan); padding: 8px 18px; font-size: .82rem; cursor: pointer; font-family: var(--font-mono); transition: all .15s; }
+.btn-demo:hover { background: rgba(0,229,255,.08); }
+
+/* ── COMPARISON ── */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.compare-col {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+.compare-col-head {
+  font-family: var(--font-head);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.compare-item {
+  display: flex;
+  gap: 8px;
+  font-size: .85rem;
+  margin-bottom: 10px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.compare-item::before { content: '▸'; color: var(--cyan); flex-shrink: 0; }
+
+/* ── NAT DIAGRAM ── */
+.nat-diagram {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+.nat-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.nat-device {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-family: var(--font-mono);
+  font-size: .75rem;
+  text-align: center;
+  min-width: 110px;
+}
+.nat-device .nd-ip { font-size: .7rem; color: var(--green); margin-top: 3px; }
+.nat-arrow { color: var(--orange); font-size: 1.2rem; }
+.nat-router {
+  background: linear-gradient(135deg, rgba(255,107,53,.15), rgba(255,214,10,.1));
+  border: 2px solid rgba(255,107,53,.3);
+  border-radius: 10px;
+  padding: 14px 20px;
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  text-align: center;
+}
+.nat-router .nr-pub { color: var(--orange); font-size: .75rem; margin-top: 4px; }
+
+/* ── TAG ROW ── */
+.tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: .72rem;
+  font-family: var(--font-mono);
+}
+.pill-cyan { background: rgba(0,229,255,.1); color: var(--cyan); border: 1px solid rgba(0,229,255,.2); }
+.pill-green { background: rgba(0,255,136,.1); color: var(--green); border: 1px solid rgba(0,255,136,.2); }
+.pill-orange { background: rgba(255,107,53,.1); color: var(--orange); border: 1px solid rgba(255,107,53,.2); }
+.pill-purple { background: rgba(155,89,255,.1); color: var(--purple); border: 1px solid rgba(155,89,255,.2); }
+
+/* ── DIVIDER ── */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+  margin: 32px 0;
+}
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  #sidebar { transform: translateX(-260px); }
+  #sidebar.open { transform: translateX(0); }
+  #main { margin-left: 0; }
+  .content-pane { padding: 24px 20px 60px; }
+  .module-title { font-size: 1.8rem; }
+  .subnet-details-grid, .compare-grid { grid-template-columns: 1fr; }
+  .topbar { padding: 12px 20px; }
+  .mobile-menu { display: flex !important; }
+}
+
+.mobile-menu {
+  display: none;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px 10px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* ── SCORE ── */
+.score-banner {
+  background: linear-gradient(135deg, rgba(0,229,255,.1), rgba(0,255,136,.07));
+  border: 1px solid rgba(0,229,255,.2);
+  border-radius: 10px;
+  padding: 16px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.score-val {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--cyan);
+}
+.score-label { font-size: .82rem; color: var(--muted); }
+
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <h1>⚡ NetLearn</h1>
+    <span>IP & Subnetting Masterclass</span>
+  </div>
+
+  <div class="nav-section">Foundation</div>
+  <div class="nav-item active" onclick="showModule('m1')">
+    <span>🌐</span> Role of IP <span class="badge">M1</span>
+  </div>
+  <div class="nav-item" onclick="showModule('m2')">
+    <span>🔬</span> Anatomy of IP <span class="badge">M2</span>
+  </div>
+
+  <div class="nav-section">Addressing</div>
+  <div class="nav-item" onclick="showModule('m3')">
+    <span>📚</span> Classful (Old) <span class="badge">M3</span>
+  </div>
+  <div class="nav-item" onclick="showModule('m4')">
+    <span>✂️</span> CIDR (New) <span class="badge">M4</span>
+  </div>
+
+  <div class="nav-section">Subnetting</div>
+  <div class="nav-item" onclick="showModule('m5')">
+    <span>🧩</span> What is Subnetting? <span class="badge">M5</span>
+  </div>
+  <div class="nav-item" onclick="showModule('m6')">
+    <span>🧮</span> Formulas <span class="badge">M6</span>
+  </div>
+  <div class="nav-item" onclick="showModule('m7')">
+    <span>📐</span> Full Calculation <span class="badge">M7</span>
+  </div>
+  <div class="nav-item" onclick="showModule('m8')">
+    <span>🔧</span> Subnet Calculator <span class="badge">M8</span>
+  </div>
+
+  <div class="nav-section">Advanced</div>
+  <div class="nav-item" onclick="showModule('m9')">
+    <span>🗺️</span> Routing <span class="badge">M9</span>
+  </div>
+  <div class="nav-item" onclick="showModule('m10')">
+    <span>🚪</span> Default Gateway <span class="badge">M10</span>
+  </div>
+  <div class="nav-item" onclick="showModule('m11')">
+    <span>🔁</span> NAT & PAT <span class="badge">M11</span>
+  </div>
+
+  <div class="nav-section">Practice</div>
+  <div class="nav-item" onclick="showModule('quiz')">
+    <span>🎯</span> Quiz Lab <span class="badge">NEW</span>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <button class="mobile-menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+    <div class="breadcrumb">NetLearn / <span id="breadcrumb-text">Module 1</span></div>
+    <div class="progress-track">
+      <span id="prog-label">0% complete</span>
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="prog-bar" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MODULE 1 ═══════════════ -->
+  <div class="content-pane active" id="m1">
+    <div class="module-badge">🌐 MODULE 1 · FOUNDATION</div>
+    <h2 class="module-title">The Role of <em>IP Addresses</em></h2>
+    <p class="module-sub">Every device on a network needs an address — just like every house on a street needs a number. Let's understand why.</p>
+
+    <div class="analogy-box">
+      <div class="analogy-icon">🏠</div>
+      <div class="analogy-content">
+        <div class="analogy-label">Real World Analogy</div>
+        <div class="analogy-text">Imagine you want to send a gift to a friend. Without their house address, the courier has no idea where to deliver it. The gift gets lost. <strong>An IP address works exactly like a home address</strong> — it tells the internet exactly which device should receive a message.</div>
+      </div>
+    </div>
+
+    <div class="concept-box">
+      <div class="concept-label">What is an IP Address?</div>
+      <div class="concept-text">An <strong>IP Address</strong> (Internet Protocol Address) is a unique number assigned to every device connected to a network. It allows devices to find and communicate with each other. Without it, data has no destination.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:rgba(0,229,255,.1);">🔑</div>Why Every Device Needs an IP</div>
+      <div class="steps-container">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Identification</div>
+            <div class="step-desc">Each device gets a <strong>unique IP</strong> on the network — like a roll number in your class. No two devices share the same IP at the same time.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Location</div>
+            <div class="step-desc">The IP tells routers <strong>which network</strong> a device belongs to, so data knows which direction to travel.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Communication</div>
+            <div class="step-desc">When you open a website, your browser sends a request <strong>from your IP to the server's IP</strong>. The server replies back to your IP.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Packet Demo -->
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:rgba(0,255,136,.1);">📦</div>Live Demo: What happens without an IP?</div>
+      <div class="packet-demo">
+        <div class="packet-track">
+          <div class="packet-node" id="pn-sender">
+            <div class="pn-icon">💻</div>
+            <div>Sender</div>
+          </div>
+          <div class="packet-line" id="pline1">
+            <div class="packet-dot" id="pdot1"></div>
+          </div>
+          <div class="packet-node" id="pn-router">
+            <div class="pn-icon">📡</div>
+            <div>Router</div>
+          </div>
+          <div class="packet-line" id="pline2">
+            <div class="packet-dot" id="pdot2"></div>
+          </div>
+          <div class="packet-node" id="pn-recv">
+            <div class="pn-icon">🖥️</div>
+            <div>Receiver</div>
+          </div>
+        </div>
+        <div class="packet-label" id="packet-status">Choose a mode and watch what happens!</div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
+          <button class="btn-demo" onclick="runPacketDemo(true)">▶ With IP Address</button>
+          <button class="btn-demo" onclick="runPacketDemo(false)">✕ Without IP Address</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MODULE 2 ═══════════════ -->
+  <div class="content-pane" id="m2">
+    <div class="module-badge">🔬 MODULE 2 · ANATOMY</div>
+    <h2 class="module-title">Inside an <em>IP Address</em></h2>
+    <p class="module-sub">An IP address is not just random numbers — it has a hidden structure with two important parts.</p>
+
+    <div class="analogy-box">
+      <div class="analogy-icon">📮</div>
+      <div class="analogy-content">
+        <div class="analogy-label">Real World Analogy</div>
+        <div class="analogy-text">A postal address like <strong>"Jawahar Nagar, House #5"</strong> has two parts: the <em>street/area name</em> (which area?) and the <em>house number</em> (which house?). An IP address works the same way — one part identifies the <strong>network</strong>, the other identifies the <strong>device</strong>.</div>
+      </div>
+    </div>
+
+    <div class="concept-box">
+      <div class="concept-label">IPv4 Structure</div>
+      <div class="concept-text">IPv4 is a 32-bit address written as 4 groups of numbers (octets), separated by dots. Example: <strong style="color:var(--cyan);font-family:var(--font-mono)">192.168.10.5</strong>. Each group (octet) can be 0–255.</div>
+    </div>
+
+    <!-- Visual bit breakdown -->
+    <div class="ip-display">
+      <div style="font-size:.7rem;color:var(--muted);margin-bottom:14px;letter-spacing:.08em;">IP: 192.168.10.5 / SUBNET MASK: 255.255.255.0</div>
+      <div class="ip-row">
+        <div class="octet-group">
+          <div class="bit-cell bit-network">1</div><div class="bit-cell bit-network">1</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div>
+        </div>
+        <div class="ip-sep">.</div>
+        <div class="octet-group">
+          <div class="bit-cell bit-network">1</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">1</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">1</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div>
+        </div>
+        <div class="ip-sep">.</div>
+        <div class="octet-group">
+          <div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">1</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">1</div><div class="bit-cell bit-network">0</div>
+        </div>
+        <div class="ip-sep">.</div>
+        <div class="octet-group">
+          <div class="bit-cell bit-host">0</div><div class="bit-cell bit-host">0</div><div class="bit-cell bit-host">0</div><div class="bit-cell bit-host">0</div><div class="bit-cell bit-host">0</div><div class="bit-cell bit-host">1</div><div class="bit-cell bit-host">0</div><div class="bit-cell bit-host">1</div>
+        </div>
+      </div>
+      <div style="font-size:.7rem;color:var(--muted);margin-top:6px;font-family:var(--font-mono)">
+        ◀ Network ID (192.168.10) = 24 bits ▶ &nbsp;&nbsp; ◀ Host ID (.5) = 8 bits ▶
+      </div>
+      <div class="ip-label-row">
+        <div class="ip-label"><div class="ip-label-dot" style="background:rgba(0,229,255,.6);"></div>Network bits (24 total)</div>
+        <div class="ip-label"><div class="ip-label-dot" style="background:rgba(0,255,136,.5);"></div>Host bits (8 total)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:rgba(155,89,255,.1);">📊</div>Two Parts of an IP</div>
+      <table class="neat-table">
+        <thead><tr><th>Part</th><th>Example</th><th>What it identifies</th><th>Bits</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--cyan)">Network ID</strong></td><td style="font-family:var(--font-mono);color:var(--cyan)">192.168.10</td><td>Which network the device is on</td><td>24</td></tr>
+          <tr><td><strong style="color:var(--green)">Host ID</strong></td><td style="font-family:var(--font-mono);color:var(--green)">.5</td><td>Which specific device in the network</td><td>8</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:rgba(255,107,53,.1);">🎭</div>The Subnet Mask's Role</div>
+      <div class="concept-text" style="font-size:.9rem;line-height:1.8;color:var(--muted)">
+        The <strong style="color:var(--text)">Subnet Mask</strong> (255.255.255.0) is like a filter. It tells the device: 
+        <em style="color:var(--orange)">"Everything covered by 255 → that's the network. Everything covered by 0 → that's the host part."</em><br><br>
+        255 in binary = <span style="font-family:var(--font-mono);color:var(--cyan)">11111111</span> → ALL 8 bits = network portion.<br>
+        0 in binary = <span style="font-family:var(--font-mono);color:var(--green)">00000000</span> → ALL 8 bits = host portion.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MODULE 3 ═══════════════ -->
+  <div class="content-pane" id="m3">
+    <div class="module-badge">📚 MODULE 3 · CLASSFUL ADDRESSING</div>
+    <h2 class="module-title">Classful Addressing — <em>The Old Way</em></h2>
+    <p class="module-sub">Before 1993, all IP addresses were sorted into fixed "classes." It was simple, but had a big problem: massive waste.</p>
+
+    <div class="analogy-box">
+      <div class="analogy-icon">🏗️</div>
+      <div class="analogy-content">
+        <div class="analogy-label">Real World Analogy</div>
+        <div class="analogy-text">Imagine apartment buildings only came in 3 sizes: <strong>Small (2 flats), Medium (254 flats), Large (65,534 flats)</strong>. A family of 5 has to rent a "large" building — 65,529 flats go empty. That's classful addressing!</div>
+      </div>
+    </div>
+
+    <div class="concept-box">
+      <div class="concept-label">Introduced 1981</div>
+      <div class="concept-text">Classful addressing divided all IPv4 addresses into <strong>5 fixed classes (A through E)</strong>. The first few bits of the address automatically determined which class it belonged to — and each class had a fixed subnet mask with no flexibility.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:rgba(0,229,255,.1);">🗂️</div>The 5 Classes</div>
+      <table class="neat-table">
+        <thead><tr><th>Class</th><th>First Octet Range</th><th>Subnet Mask</th><th>CIDR</th><th>Max Hosts</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-a">A</span></td><td>1 – 126</td><td style="font-family:var(--font-mono);font-size:.8rem">255.0.0.0</td><td style="font-family:var(--font-mono)">/8</td><td><strong>16,777,214</strong></td><td>Huge corps</td></tr>
+          <tr><td><span class="tag tag-b">B</span></td><td>128 – 191</td><td style="font-family:var(--font-mono);font-size:.8rem">255.255.0.0</td><td style="font-family:var(--font-mono)">/16</td><td><strong>65,534</strong></td><td>Universities</td></tr>
+          <tr><td><span class="tag tag-c">C</span></td><td>192 – 223</td><td style="font-family:var(--font-mono);font-size:.8rem">255.255.255.0</td><td style="font-family:var(--font-mono)">/24</td><td><strong>254</strong></td><td>Small offices</td></tr>
+          <tr><td><span class="tag" style="background:rgba(255,214,10,.1);color:var(--yellow)">D</span></td><td>224 – 239</td><td>—</td><td>—</td><td>—</td><td>Multicast</td></tr>
+          <tr><td><span class="tag" style="background:rgba(255,71,87,.1);color:var(--red)">E</span></td><td>240 – 255</td><td>—</td><td>—</td><td>—</td><td>Research</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:rgba(255,71,87,.1);">⚠️</div>The Problem with Classful</div>
+      <div class="compare-grid">
+        <div class="compare-col" style="border-color:rgba(255,71,87,.2)">
+          <div class="compare-col-head" style="color:var(--red)">❌ The Waste Problem</div>
+          <div class="compare-item">A small business with 300 devices <strong>can't use Class C</strong> (only 254 hosts)</div>
+          <div class="compare-item">They must take Class B — which gives <strong>65,534 hosts</strong></div>
+          <div class="compare-item">Result: <strong>65,234 IP addresses wasted</strong> forever</div>
+          <div class="compare-item">The internet ran out of IP addresses <strong>much faster</strong> because of this</div>
+        </div>
+        <div class="compare-col" style="border-color:rgba(255,71,87,.2)">
+          <div class="compare-col-head" style="color:var(--red)">❌ No Flexibility</div>
+          <div class="compare-item">You couldn't say "give me exactly 500 IPs"</div>
+          <div class="compare-item">Subnet masks were <strong>fixed</strong> — you couldn't customize</div>
+          <div class="compare-item">Networks couldn't be <strong>split</strong> into smaller pieces</div>
+          <div class="compare-item">Led to creation of <strong>CIDR in 1993</strong> as the fix</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MODULE 4 ═══════════════ -->
+  <div class="content-pane" id="m4">
+    <div class="module-badge">✂️ MODULE 4 · CIDR</div>
+    <h2 class="module-title">Classless Addressing — <em>CIDR</em></h2>
+    <p class="module-sub">Introduced in 1993, CIDR broke the rigid class system. Now you could choose exactly how many hosts you need — no more, no less.</p>
+
+    <div class="analogy-box">
+      <div class="analogy-icon">📏</div>
+      <div class="analogy-content">
+        <div class="analogy-label">Real World Analogy</div>
+        <div class="analogy-text">Classful = buying only S, M, or XL shirts. <strong>CIDR = custom tailoring</strong> — you tell them exactly your size and they cut the fabric precisely. No waste, perfect fit.</div>
+      </div>
+    </div>
+
+    <div class="concept-box">
+      <div class="concept-label">CIDR Notation</div>
+      <div class="concept-text">CIDR uses a <strong>slash notation</strong> like /24, /26, /28. The number after the slash tells you how many bits are used for the <em>network part</em>. The rest are for hosts.<br><br>
+      <span style="font-family:var(--font-mono);color:var(--cyan)">192.168.10.0<strong style="color:var(--orange)">/24</strong></span> → 24 bits = network, 8 bits = hosts → 254 usable hosts</div>
+    </div>
+
+    <div class="ip-display">
+      <div style="font-size:.7rem;color:var(--muted);margin-bottom:10px;letter-spacing:.08em;">CIDR /26 — Bits are split 26 network + 6 host</div>
+      <div class="ip-row">
+        <div class="octet-group">
+          <div class="bit-cell bit-network">1</div><div class="bit-cell bit-network">1</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div>
+        </div>
+        <div class="ip-sep">.</div>
+        <div class="octet-group">
+          <div class="bit-cell bit-network">1</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">1</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">1</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div>
+        </div>
+        <div class="ip-sep">.</div>
+        <div class="octet-group">
+          <div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">1</div>
+        </div>
+        <div class="ip-sep">.</div>
+        <div class="octet-group">
+          <div class="bit-cell bit-network">0</div><div class="bit-cell bit-network">0</div><div class="bit-cell bit-host">0</div><div class="bit-cell bit-host">0</div><div class="bit-cell bit-host">0</div><div class="bit-cell bit-host">0</div><div class="bit-cell bit-host">0</div><div class="bit-cell bit-host">0</div>
+        </div>
+      </div>
+      <div style="font-size:.7rem;color:var(--muted);margin-top:6px;font-family:var(--font-mono)">
+        ◀ 26 network bits ▶ &nbsp;&nbsp;&nbsp; ◀ 6 host bits → 2⁶−2 = 62 hosts ▶
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:rgba(0,255,136,.1);">⚖️</div>Classful vs Classless Comparison</div>
+      <table class="neat-table">
+        <thead><tr><th>Feature</th><th>Classful (Old)</th><th>Classless CIDR (New)</th></tr></thead>
+        <tbody>
+          <tr><td>Introduced</td><td>1981</td><td><strong>1993</strong></td></tr>
+          <tr><td>Flexibility</td><td style="color:var(--red)">❌ Fixed classes only</td><td style="color:var(--green)">✅ Any prefix length</td></tr>
+          <tr><td>Efficiency</td><td style="color:var(--red)">Low — lots of waste</td><td style="color:var(--green)">High — precise allocation</td></tr>
+          <tr><td>Subnet Mask</td><td>Fixed per class</td><td><strong>Variable (VLSM)</strong></td></tr>
+          <tr><td>Address conservation</td><td style="color:var(--red)">Poor</td><td style="color:var(--green)">Excellent</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MODULE 5 ═══════════════ -->
+  <div class="content-pane" id="m5">
+    <div class="module-badge">🧩 MODULE 5 · SUBNETTING CORE</div>
+    <h2 class="module-title">What is <em>Subnetting</em>?</h2>
+    <p class="module-sub">The most important concept in networking — dividing one big network into smaller, manageable pieces.</p>
+
+    <div class="analogy-box">
+      <div class="analogy-icon">🏫</div>
+      <div class="analogy-content">
+        <div class="analogy-label">Real World Analogy — Your School</div>
+        <div class="analogy-text">Imagine your school has one big building (the main network <strong>192.168.1.0/24</strong>). Inside, you split it into departments: <strong>Computer Lab, Admin Office, Student Wing</strong>. Each gets its own section. Traffic in the lab doesn't disturb the admin. That's subnetting — organized, isolated, efficient.</div>
+      </div>
+    </div>
+
+    <div class="concept-box">
+      <div class="concept-label">Definition</div>
+      <div class="concept-text"><strong>Subnetting</strong> is the process of dividing a single network into two or more smaller networks called <em>subnets</em>. You do this by <strong>borrowing bits</strong> from the host portion and giving them to the network portion.</div>
+    </div>
+
+    <!-- School network visual -->
+    <div class="subnet-visual">
+      <div class="subnet-visual-title">SCHOOL NETWORK: 192.168.1.0/24 → Split into 3 departments</div>
+      <div class="subnet-bar-track">
+        <div class="subnet-bar-seg seg1" style="flex:2">💻 Lab<br><span style="font-size:.65rem;opacity:.8">192.168.1.0/26</span></div>
+        <div class="subnet-bar-seg seg2" style="flex:2">🏢 Admin<br><span style="font-size:.65rem;opacity:.8">192.168.1.64/26</span></div>
+        <div class="subnet-bar-seg seg3" style="flex:2">🎓 Students<br><span style="font-size:.65rem;opacity:.8">192.168.1.128/26</span></div>
+        <div class="subnet-bar-seg seg4" style="flex:2">📦 Reserve<br><span style="font-size:.65rem;opacity:.8">192.168.1.192/26</span></div>
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);text-align:center">Each subnet has 62 usable host addresses · No cross-network confusion</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:rgba(0,229,255,.1);">🎯</div>Why Do We Subnet?</div>
+      <div class="steps-container">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">🔐 Security Isolation</div>
+            <div class="step-desc">Keep departments separate. A virus in the student network <strong>won't spread to admin computers</strong> if they're on different subnets.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">📡 Reduce Traffic (Broadcast)</div>
+            <div class="step-desc">When one device broadcasts, <strong>only devices in that subnet receive it</strong> — not the whole school. Less congestion, faster network.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">💡 Efficient IP Usage</div>
+            <div class="step-desc">Assign only <strong>as many IPs as needed</strong> to each department. No waste.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MODULE 6 ═══════════════ -->
+  <div class="content-pane" id="m6">
+    <div class="module-badge">🧮 MODULE 6 · FORMULAS</div>
+    <h2 class="module-title">Subnetting <em>Formulas</em></h2>
+    <p class="module-sub">Two formulas power all subnetting math. Understand them deeply, and every problem becomes easy.</p>
+
+    <!-- Formula 1 -->
+    <div class="formula-card">
+      <div style="font-size:.7rem;font-family:var(--font-mono);color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">Formula 1 · Number of Usable Hosts</div>
+      <div class="formula-big">2<sup>h</sup> − 2</div>
+      <div class="formula-label">where <strong>h</strong> = number of host bits remaining</div>
+      <div class="formula-why">
+        <strong>Why 2<sup>h</sup>?</strong> Each host bit can be either 0 or 1. With h bits, you get 2<sup>h</sup> total combinations (all possible addresses).<br><br>
+        <strong>Why subtract 2?</strong> Two addresses are always reserved:<br>
+        &nbsp;• The <span style="color:var(--cyan)">Network Address</span> (all host bits = 0) — identifies the subnet itself<br>
+        &nbsp;• The <span style="color:var(--red)">Broadcast Address</span> (all host bits = 1) — sends data to ALL devices in subnet<br><br>
+        Example: h = 6 → 2<sup>6</sup> − 2 = 64 − 2 = <strong style="color:var(--green)">62 usable hosts</strong>
+      </div>
+    </div>
+
+    <!-- Formula 2 -->
+    <div class="formula-card" style="background:linear-gradient(135deg, rgba(255,107,53,.08), rgba(155,89,255,.07));border-color:rgba(255,107,53,.3)">
+      <div style="font-size:.7rem;font-family:var(--font-mono);color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">Formula 2 · Number of Subnets</div>
+      <div class="formula-big" style="color:var(--orange)">2<sup>n</sup></div>
+      <div class="formula-label">where <strong>n</strong> = number of bits borrowed from the host portion</div>
+      <div class="formula-why">
+        <strong>Why borrow bits?</strong> To create subnets, we "steal" bits from the host portion and add them to the network portion.<br><br>
+        <strong>Why 2<sup>n</sup>?</strong> Each borrowed bit can be 0 or 1, giving 2 possibilities. Two borrowed bits → 2² = 4 subnets. Three bits → 2³ = 8 subnets.<br><br>
+        <strong>No subtraction here!</strong> Unlike hosts, we use ALL combinations for subnets — there are no reserved values.<br><br>
+        Example: Need 4 subnets → 2<sup>n</sup> ≥ 4 → n = 2 (since 2² = 4 ✅)
+      </div>
+    </div>
+
+    <!-- Quick reference -->
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:rgba(0,229,255,.1);">📊</div>Quick Reference Table</div>
+      <table class="neat-table">
+        <thead><tr><th>Host bits (h)</th><th>2<sup>h</sup></th><th>Usable Hosts (2<sup>h</sup>−2)</th><th>Borrowed bits (n)</th><th>Subnets (2<sup>n</sup>)</th></tr></thead>
+        <tbody>
+          <tr><td>2</td><td>4</td><td style="color:var(--green)">2</td><td>1</td><td style="color:var(--orange)">2</td></tr>
+          <tr><td>3</td><td>8</td><td style="color:var(--green)">6</td><td>2</td><td style="color:var(--orange)">4</td></tr>
+          <tr><td>4</td><td>16</td><td style="color:var(--green)">14</td><td>3</td><td style="color:var(--orange)">8</td></tr>
+          <tr><td>5</td><td>32</td><td style="color:var(--green)">30</td><td>4</td><td style="color:var(--orange)">16</td></tr>
+          <tr><td>6</td><td>64</td><td style="color:var(--green)"><strong>62</strong></td><td>5</td><td style="color:var(--orange)">32</td></tr>
+          <tr><td>8</td><td>256</td><td style="color:var(--green)"><strong>254</strong></td><td>6</td><td style="color:var(--orange)">64</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MODULE 7 ═══════════════ -->
+  <div class="content-pane" id="m7">
+    <div class="module-badge">📐 MODULE 7 · FULL CALCULATION</div>
+    <h2 class="module-title">Step-by-Step <em>Subnetting</em></h2>
+    <p class="module-sub">Let's solve a complete subnetting problem from scratch — every step explained, nothing skipped.</p>
+
+    <div class="concept-box">
+      <div class="concept-label">The Problem</div>
+      <div class="concept-text" style="font-family:var(--font-mono)">
+        <strong style="color:var(--cyan)">Given:</strong> Network = 192.168.1.0/24<br>
+        <strong style="color:var(--orange)">Goal:</strong> Divide into 4 equal subnets
+      </div>
+    </div>
+
+    <div class="steps-container">
+
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">How many bits to borrow?</div>
+          <div class="step-desc">We need 4 subnets. Use formula: <strong>2<sup>n</sup> ≥ 4</strong><br>
+            Try n=1: 2¹ = 2 ❌ (not enough)<br>
+            Try n=2: 2² = 4 ✅ <strong>→ Borrow 2 bits</strong>
+          </div>
+          <div class="code-block">Need: 4 subnets
+<span class="c-cyan">2^n ≥ 4</span>
+<span class="c-orange">2^2 = 4</span>  ✓
+<span class="c-green">→ n = 2 bits to borrow</span></div>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Update the subnet mask</div>
+          <div class="step-desc">Original prefix: <strong>/24</strong> (24 network bits)<br>
+            After borrowing 2 bits: <strong>/24 + 2 = /26</strong><br>
+            New subnet mask: <strong>255.255.255.192</strong></div>
+          <div class="ip-display" style="margin-top:12px">
+            <div class="ip-row" style="margin-bottom:8px">
+              <div style="font-size:.7rem;color:var(--muted);width:80px">Before /24:</div>
+              <div class="octet-group">
+                <div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div>
+              </div>
+              <div class="ip-sep" style="font-size:.7rem">·</div>
+              <div class="octet-group">
+                <div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div>
+              </div>
+              <div class="ip-sep" style="font-size:.7rem">·</div>
+              <div class="octet-group">
+                <div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div>
+              </div>
+              <div class="ip-sep" style="font-size:.7rem">·</div>
+              <div class="octet-group">
+                <div class="bit-cell bit-host" style="width:22px;height:22px;font-size:.65rem">0</div><div class="bit-cell bit-host" style="width:22px;height:22px;font-size:.65rem">0</div><div class="bit-cell bit-host" style="width:22px;height:22px;font-size:.65rem">0</div><div class="bit-cell bit-host" style="width:22px;height:22px;font-size:.65rem">0</div><div class="bit-cell bit-host" style="width:22px;height:22px;font-size:.65rem">0</div><div class="bit-cell bit-host" style="width:22px;height:22px;font-size:.65rem">0</div><div class="bit-cell bit-host" style="width:22px;height:22px;font-size:.65rem">0</div><div class="bit-cell bit-host" style="width:22px;height:22px;font-size:.65rem">0</div>
+              </div>
+            </div>
+            <div class="ip-row">
+              <div style="font-size:.7rem;color:var(--muted);width:80px">After /26:</div>
+              <div class="octet-group">
+                <div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div>
+              </div>
+              <div class="ip-sep" style="font-size:.7rem">·</div>
+              <div class="octet-group">
+                <div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div>
+              </div>
+              <div class="ip-sep" style="font-size:.7rem">·</div>
+              <div class="octet-group">
+                <div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-network" style="width:22px;height:22px;font-size:.65rem">1</div>
+              </div>
+              <div class="ip-sep" style="font-size:.7rem">·</div>
+              <div class="octet-group">
+                <div class="bit-cell bit-borrowed" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-borrowed" style="width:22px;height:22px;font-size:.65rem">1</div><div class="bit-cell bit-host" style="width:22px;height:22px;font-size:.65rem">0</div><div class="bit-cell bit-host" style="width:22px;height:22px;font-size:.65rem">0</div><div class="bit-cell bit-host" style="width:22px;height:22px;font-size:.65rem">0</div><div class="bit-cell bit-host" style="width:22px;height:22px;font-size:.65rem">0</div><div class="bit-cell bit-host" style="width:22px;height:22px;font-size:.65rem">0</div><div class="bit-cell bit-host" style="width:22px;height:22px;font-size:.65rem">0</div>
+              </div>
+            </div>
+            <div class="ip-label-row" style="margin-top:8px">
+              <div class="ip-label"><div class="ip-label-dot" style="background:rgba(0,229,255,.6)"></div>Network bits (26)</div>
+              <div class="ip-label"><div class="ip-label-dot" style="background:rgba(255,107,53,.6)"></div>Borrowed bits (2)</div>
+              <div class="ip-label"><div class="ip-label-dot" style="background:rgba(0,255,136,.5)"></div>Host bits (6)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Calculate hosts per subnet</div>
+          <div class="step-desc">Host bits remaining = 32 − 26 = <strong>6 bits</strong></div>
+          <div class="code-block"><span class="c-muted"># Total IPv4 bits = 32</span>
+Host bits h = 32 − 26 = <span class="c-cyan">6</span>
+Usable hosts = <span class="c-orange">2^6 − 2</span> = 64 − 2 = <span class="c-green">62 hosts per subnet</span></div>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Block size = 256 − subnet_mask_value</div>
+          <div class="step-desc">The last octet of mask = 192. Block size = 256 − 192 = <strong>64</strong>. Each subnet increments by 64.</div>
+          <div class="code-block">Subnet mask last octet: 192
+Block size = <span class="c-cyan">256 − 192 = 64</span>
+<span class="c-muted"># Subnets start at: 0, 64, 128, 192</span></div>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">Write out all 4 subnets</div>
+          <div class="step-desc">Network address, broadcast, and usable range for each:</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subnet Result Table -->
+    <div class="subnet-visual">
+      <div class="subnet-visual-title">192.168.1.0/24 → DIVIDED INTO 4 × /26 SUBNETS</div>
+      <div class="subnet-bar-track" style="margin-bottom:20px">
+        <div class="subnet-bar-seg seg1">S1<br><small>.0–.63</small></div>
+        <div class="subnet-bar-seg seg2">S2<br><small>.64–.127</small></div>
+        <div class="subnet-bar-seg seg3">S3<br><small>.128–.191</small></div>
+        <div class="subnet-bar-seg seg4">S4<br><small>.192–.255</small></div>
+      </div>
+      <div class="subnet-details-grid">
+        <div class="subnet-detail-card">
+          <div class="sn-title">⚡ SUBNET 1</div>
+          <div class="sn-lbl">Network Address</div><div class="sn-net">192.168.1.0</div>
+          <div class="sn-lbl" style="margin-top:6px">Broadcast Address</div><div class="sn-bc">192.168.1.63</div>
+          <div class="sn-lbl" style="margin-top:6px">Usable Host Range</div><div class="sn-range">192.168.1.1 – 192.168.1.62</div>
+          <div class="sn-lbl" style="margin-top:6px">Usable Hosts</div><div style="color:var(--text);font-family:var(--font-mono);font-size:.8rem">62</div>
+        </div>
+        <div class="subnet-detail-card">
+          <div class="sn-title" style="color:var(--purple)">⚡ SUBNET 2</div>
+          <div class="sn-lbl">Network Address</div><div class="sn-net">192.168.1.64</div>
+          <div class="sn-lbl" style="margin-top:6px">Broadcast Address</div><div class="sn-bc">192.168.1.127</div>
+          <div class="sn-lbl" style="margin-top:6px">Usable Host Range</div><div class="sn-range">192.168.1.65 – 192.168.1.126</div>
+          <div class="sn-lbl" style="margin-top:6px">Usable Hosts</div><div style="color:var(--text);font-family:var(--font-mono);font-size:.8rem">62</div>
+        </div>
+        <div class="subnet-detail-card">
+          <div class="sn-title" style="color:var(--green)">⚡ SUBNET 3</div>
+          <div class="sn-lbl">Network Address</div><div class="sn-net">192.168.1.128</div>
+          <div class="sn-lbl" style="margin-top:6px">Broadcast Address</div><div class="sn-bc">192.168.1.191</div>
+          <div class="sn-lbl" style="margin-top:6px">Usable Host Range</div><div class="sn-range">192.168.1.129 – 192.168.1.190</div>
+          <div class="sn-lbl" style="margin-top:6px">Usable Hosts</div><div style="color:var(--text);font-family:var(--font-mono);font-size:.8rem">62</div>
+        </div>
+        <div class="subnet-detail-card">
+          <div class="sn-title" style="color:var(--orange)">⚡ SUBNET 4</div>
+          <div class="sn-lbl">Network Address</div><div class="sn-net">192.168.1.192</div>
+          <div class="sn-lbl" style="margin-top:6px">Broadcast Address</div><div class="sn-bc">192.168.1.255</div>
+          <div class="sn-lbl" style="margin-top:6px">Usable Host Range</div><div class="sn-range">192.168.1.193 – 192.168.1.254</div>
+          <div class="sn-lbl" style="margin-top:6px">Usable Hosts</div><div style="color:var(--text);font-family:var(--font-mono);font-size:.8rem">62</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MODULE 8 — CALCULATOR ═══════════════ -->
+  <div class="content-pane" id="m8">
+    <div class="module-badge">🔧 MODULE 8 · INTERACTIVE CALCULATOR</div>
+    <h2 class="module-title">Subnet <em>Calculator</em></h2>
+    <p class="module-sub">Enter any IP and CIDR prefix — get instant subnet details with full step-by-step reasoning.</p>
+
+    <div class="calc-section">
+      <div class="calc-header">🧮 Subnet Calculator</div>
+      <div class="calc-body">
+        <div class="input-row">
+          <div class="input-group">
+            <label>IP Address</label>
+            <input type="text" id="calc-ip" value="192.168.1.0" placeholder="e.g. 10.0.0.0">
+          </div>
+          <div class="input-group" style="flex:0;min-width:120px">
+            <label>CIDR Prefix</label>
+            <input type="number" id="calc-cidr" value="24" min="1" max="30">
+          </div>
+          <div class="input-group" style="flex:0;min-width:120px">
+            <label>Subnets Needed</label>
+            <input type="number" id="calc-subnets" value="4" min="1" max="64">
+          </div>
+        </div>
+        <button class="btn-calc" onclick="runCalc()">⚡ Calculate</button>
+
+        <div class="calc-result" id="calc-result">
+          <div style="font-size:.7rem;color:var(--cyan);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;font-family:var(--font-mono)">── RESULTS ──</div>
+          <div id="calc-steps" style="margin-bottom:16px;font-size:.8rem;line-height:1.9;color:var(--muted)"></div>
+          <div class="result-grid" id="calc-grid"></div>
+          <div id="calc-subnet-table" style="margin-top:20px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MODULE 9 ═══════════════ -->
+  <div class="content-pane" id="m9">
+    <div class="module-badge">🗺️ MODULE 9 · ROUTING</div>
+    <h2 class="module-title">Routing — <em>Finding the Path</em></h2>
+    <p class="module-sub">Once you've built subnets, how does data know which road to take? That's routing.</p>
+
+    <div class="analogy-box">
+      <div class="analogy-icon">🗺️</div>
+      <div class="analogy-content">
+        <div class="analogy-label">Real World Analogy</div>
+        <div class="analogy-text"><strong>Static Routing</strong> = driving with a printed map you wrote yourself. Every turn is fixed.<br><strong>Dynamic Routing</strong> = using Google Maps. It updates automatically based on traffic, new roads, shortcuts.</div>
+      </div>
+    </div>
+
+    <div class="concept-box">
+      <div class="concept-label">What is Routing?</div>
+      <div class="concept-text"><strong>Routing</strong> is the process of selecting the best path for data to travel from a source to a destination across networks. A <strong>router</strong> is the device that makes these decisions, using a <em>routing table</em> as its map.</div>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-col" style="border-color:rgba(0,229,255,.2)">
+        <div class="compare-col-head" style="color:var(--cyan)">📌 Static Routing</div>
+        <div class="compare-item">Routes are <strong>manually configured</strong> by the network admin</div>
+        <div class="compare-item">Does <strong>not change automatically</strong> if a link fails</div>
+        <div class="compare-item"><strong>Low overhead</strong> — no routing protocol traffic</div>
+        <div class="compare-item">Best for <strong>small, simple, predictable</strong> networks</div>
+        <div class="compare-item">Example: Office with 3 fixed locations</div>
+      </div>
+      <div class="compare-col" style="border-color:rgba(0,255,136,.2)">
+        <div class="compare-col-head" style="color:var(--green)">🔄 Dynamic Routing</div>
+        <div class="compare-item">Routers <strong>automatically learn paths</strong> via protocols</div>
+        <div class="compare-item">Adapts to link failures, <strong>finds alternative routes</strong></div>
+        <div class="compare-item">Protocols: <strong>RIP, OSPF, BGP, EIGRP</strong></div>
+        <div class="compare-item">Best for <strong>large, complex, changing</strong> networks</div>
+        <div class="compare-item">Example: Internet backbone routing</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:rgba(155,89,255,.1)">📋</div>How a Router Decides</div>
+      <div class="steps-container">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Receive Packet</div>
+            <div class="step-desc">Router receives a data packet and reads its <strong>destination IP address</strong>.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Check Routing Table</div>
+            <div class="step-desc">Compares destination IP against entries in its <strong>routing table</strong> — a list of known networks and which interface/next-hop to use.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Forward or Drop</div>
+            <div class="step-desc">If a matching route exists → <strong>forward</strong> the packet. If not → <strong>drop</strong> or send to default gateway.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MODULE 10 ═══════════════ -->
+  <div class="content-pane" id="m10">
+    <div class="module-badge">🚪 MODULE 10 · DEFAULT GATEWAY</div>
+    <h2 class="module-title">The <em>Default Gateway</em></h2>
+    <p class="module-sub">Your exit door to the outside world. Without it, your device can only talk to others in the same subnet.</p>
+
+    <div class="analogy-box">
+      <div class="analogy-icon">🚪</div>
+      <div class="analogy-content">
+        <div class="analogy-label">Real World Analogy</div>
+        <div class="analogy-text">Your school building has <strong>one main gate</strong>. To go to another school (a different network), everyone has to exit through that gate. Your <strong>default gateway is that main gate</strong> — any traffic going outside your network passes through it.</div>
+      </div>
+    </div>
+
+    <div class="concept-box">
+      <div class="concept-label">Definition</div>
+      <div class="concept-text">A <strong>Default Gateway</strong> is the IP address of the router interface on your local network. When your device wants to send data to an IP address that is <em>not on your subnet</em>, it automatically sends the packet to the default gateway, which then forwards it toward the destination.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:rgba(0,229,255,.1)">🏠</div>Home Network Example</div>
+      <table class="neat-table">
+        <thead><tr><th>Device</th><th>IP Address</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td>Your Phone</td><td style="font-family:var(--font-mono);color:var(--green)">192.168.1.5</td><td>Client device</td></tr>
+          <tr><td>Your Laptop</td><td style="font-family:var(--font-mono);color:var(--green)">192.168.1.8</td><td>Client device</td></tr>
+          <tr><td><strong>WiFi Router</strong></td><td style="font-family:var(--font-mono);color:var(--orange)"><strong>192.168.1.1</strong></td><td><strong>Default Gateway</strong></td></tr>
+          <tr><td>Internet (YouTube)</td><td style="font-family:var(--font-mono);color:var(--muted)">142.250.77.46</td><td>External server</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:12px;font-size:.85rem;color:var(--muted);line-height:1.7">
+        When your phone opens YouTube: <span style="color:var(--text)">Phone (192.168.1.5) → Router/Gateway (192.168.1.1) → Internet → YouTube Server</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MODULE 11 ═══════════════ -->
+  <div class="content-pane" id="m11">
+    <div class="module-badge">🔁 MODULE 11 · NAT & PAT</div>
+    <h2 class="module-title">NAT & PAT — <em>Sharing One IP</em></h2>
+    <p class="module-sub">How does your entire home share one public IP address to browse the internet? NAT and PAT are the magic behind it.</p>
+
+    <div class="analogy-box">
+      <div class="analogy-icon">📮</div>
+      <div class="analogy-content">
+        <div class="analogy-label">Real World Analogy</div>
+        <div class="analogy-text">Imagine an apartment building with <strong>one mailbox number</strong> (public IP). Inside, there are 20 flats (private IPs). The postman delivers to the building address, and the building manager distributes mail to the right flat. That's exactly how <strong>NAT works</strong>.</div>
+      </div>
+    </div>
+
+    <div class="concept-box">
+      <div class="concept-label">NAT — Network Address Translation</div>
+      <div class="concept-text"><strong>NAT</strong> translates between private (internal) IP addresses and a public (external) IP address. Devices inside your network use private IPs (like 192.168.x.x). When they access the internet, the router swaps the private IP with the public IP.</div>
+    </div>
+
+    <!-- NAT Diagram -->
+    <div class="nat-diagram">
+      <div style="font-size:.7rem;font-family:var(--font-mono);color:var(--muted);letter-spacing:.08em;margin-bottom:16px">PRIVATE NETWORK → NAT ROUTER → PUBLIC INTERNET</div>
+      <div class="nat-row">
+        <div>
+          <div class="nat-device">💻 Laptop<div class="nd-ip">192.168.1.10</div></div>
+          <div style="margin-top:6px">
+            <div class="nat-device">📱 Phone<div class="nd-ip">192.168.1.15</div></div>
+          </div>
+          <div style="margin-top:6px">
+            <div class="nat-device">🖥️ PC<div class="nd-ip">192.168.1.20</div></div>
+          </div>
+        </div>
+        <div class="nat-arrow">→→→</div>
+        <div class="nat-router">
+          🌐 Router<br>
+          <strong>NAT Table</strong>
+          <div class="nr-pub">Public IP: 203.0.113.5</div>
+        </div>
+        <div class="nat-arrow">→→→</div>
+        <div class="nat-device" style="background:rgba(0,229,255,.07);border-color:rgba(0,229,255,.2);">🌍 Internet<div class="nd-ip" style="color:var(--cyan)">203.0.113.5</div></div>
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:8px">All 3 devices appear as the SAME public IP to the internet</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:rgba(0,255,136,.1)">⚖️</div>NAT vs PAT</div>
+      <table class="neat-table">
+        <thead><tr><th>Feature</th><th>NAT</th><th>PAT (also called NAPT)</th></tr></thead>
+        <tbody>
+          <tr><td>Full Name</td><td>Network Address Translation</td><td><strong>Port Address Translation</strong></td></tr>
+          <tr><td>Mapping</td><td>One-to-one (1 private → 1 public)</td><td><strong>Many-to-one</strong> (many private → 1 public)</td></tr>
+          <tr><td>Uses ports?</td><td>No</td><td><strong>Yes — uses port numbers to track</strong></td></tr>
+          <tr><td>Use case</td><td>Specific server translations</td><td><strong>Home/office internet sharing</strong></td></tr>
+          <tr><td>Common?</td><td>Less common now</td><td style="color:var(--green)"><strong>Most common</strong> (what your router does)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="concept-box" style="background:rgba(155,89,255,.07);border-color:rgba(155,89,255,.2)">
+      <div class="concept-label" style="color:var(--purple)">PAT in Action</div>
+      <div class="concept-text" style="font-family:var(--font-mono);font-size:.82rem">
+        Laptop  (192.168.1.10:<span style="color:var(--orange)">1024</span>) → internet → mapped as 203.0.113.5:<span style="color:var(--orange)">1024</span><br>
+        Phone   (192.168.1.15:<span style="color:var(--green)">1025</span>) → internet → mapped as 203.0.113.5:<span style="color:var(--green)">1025</span><br>
+        PC      (192.168.1.20:<span style="color:var(--cyan)">1026</span>) → internet → mapped as 203.0.113.5:<span style="color:var(--cyan)">1026</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ QUIZ LAB ═══════════════ -->
+  <div class="content-pane" id="quiz">
+    <div class="module-badge">🎯 QUIZ LAB · PRACTICE</div>
+    <h2 class="module-title">Test Your <em>Knowledge</em></h2>
+    <p class="module-sub">10 questions across all modules. Instant feedback with explanations. Let's see what you've learned!</p>
+
+    <div class="score-banner">
+      <div class="score-val" id="quiz-score">0/10</div>
+      <div>
+        <div style="font-weight:600;margin-bottom:2px">Your Score</div>
+        <div class="score-label" id="quiz-progress">Answer questions to build your score</div>
+      </div>
+    </div>
+
+    <div id="quiz-container"></div>
+  </div>
+
+</div><!-- end #main -->
+
+<script>
+// ═══════════ NAVIGATION ═══════════
+const moduleNames = {
+  m1:'Module 1: Role of IP', m2:'Module 2: IP Anatomy',
+  m3:'Module 3: Classful', m4:'Module 4: CIDR',
+  m5:'Module 5: Subnetting', m6:'Module 6: Formulas',
+  m7:'Module 7: Full Calc', m8:'Module 8: Calculator',
+  m9:'Module 9: Routing', m10:'Module 10: Gateway',
+  m11:'Module 11: NAT & PAT', quiz:'Quiz Lab'
+};
+const visited = new Set(['m1']);
+let currentModule = 'm1';
+
+function showModule(id) {
+  document.querySelectorAll('.content-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelector(`.nav-item[onclick="showModule('${id}')"]`).classList.add('active');
+  document.getElementById('breadcrumb-text').textContent = moduleNames[id] || id;
+  currentModule = id;
+  visited.add(id);
+  updateProgress();
+  window.scrollTo(0,0);
+  if(id === 'quiz') initQuiz();
+}
+
+function updateProgress() {
+  const total = Object.keys(moduleNames).length;
+  const pct = Math.round((visited.size / total) * 100);
+  document.getElementById('prog-label').textContent = pct + '% explored';
+  document.getElementById('prog-bar').style.width = pct + '%';
+}
+
+// ═══════════ PACKET DEMO ═══════════
+function runPacketDemo(withIP) {
+  const sender = document.getElementById('pn-sender');
+  const router = document.getElementById('pn-router');
+  const recv   = document.getElementById('pn-recv');
+  const status = document.getElementById('packet-status');
+  const dot1   = document.getElementById('pdot1');
+  const dot2   = document.getElementById('pdot2');
+
+  // reset
+  [sender, router, recv].forEach(n => { n.classList.remove('active','reached'); });
+  dot1.style.left = '-20px';
+  dot2.style.left = '-20px';
+
+  if(!withIP) {
+    status.textContent = '❌ No IP address — packet has no destination, gets dropped!';
+    status.style.color = 'var(--red)';
+    setTimeout(() => sender.classList.add('active'), 200);
+    setTimeout(() => {
+      dot1.style.left = '40%';
+      dot1.style.background = 'var(--red)';
+      dot1.style.boxShadow = '0 0 8px var(--red)';
+    }, 500);
+    setTimeout(() => {
+      dot1.style.left = '100%';
+      status.textContent = '💥 Packet dropped — no destination IP!';
+    }, 1000);
+    return;
+  }
+
+  status.style.color = 'var(--muted)';
+  dot1.style.background = 'var(--cyan)';
+  dot1.style.boxShadow = '0 0 8px var(--cyan)';
+  dot2.style.background = 'var(--cyan)';
+  dot2.style.boxShadow = '0 0 8px var(--cyan)';
+
+  setTimeout(() => { sender.classList.add('active'); status.textContent = '📤 Packet sent from 192.168.1.5...'; }, 200);
+  setTimeout(() => { dot1.style.left = '90%'; }, 400);
+  setTimeout(() => { sender.classList.remove('active'); router.classList.add('active'); status.textContent = '📡 Router reads destination IP, decides path...'; }, 900);
+  setTimeout(() => { dot2.style.left = '90%'; }, 1100);
+  setTimeout(() => { router.classList.remove('active'); recv.classList.add('reached'); status.textContent = '✅ Packet delivered successfully to 192.168.1.10!'; status.style.color = 'var(--green)'; }, 1600);
+}
+
+// ═══════════ CALCULATOR ═══════════
+function runCalc() {
+  const ip = document.getElementById('calc-ip').value.trim();
+  const cidr = parseInt(document.getElementById('calc-cidr').value);
+  const needed = parseInt(document.getElementById('calc-subnets').value);
+
+  if(!ip || isNaN(cidr) || cidr < 1 || cidr > 30) {
+    alert('Please enter a valid IP and CIDR prefix (1-30)'); return;
+  }
+  if(isNaN(needed) || needed < 1) { alert('Please enter a valid number of subnets'); return; }
+
+  // Find bits to borrow
+  let n = 0;
+  while(Math.pow(2,n) < needed) n++;
+
+  const newCidr = cidr + n;
+  if(newCidr > 30) { alert('Not enough bits! Try fewer subnets or a smaller prefix.'); return; }
+
+  const hostBits = 32 - newCidr;
+  const hostsPerSubnet = Math.pow(2, hostBits) - 2;
+  const numSubnets = Math.pow(2, n);
+  const blockSize = Math.pow(2, hostBits);
+
+  // Parse IP
+  const parts = ip.split('.').map(Number);
+  if(parts.length !== 4 || parts.some(p => isNaN(p) || p < 0 || p > 255)) {
+    alert('Invalid IP address'); return;
+  }
+
+  // Build last octet mask value
+  const maskOctet = 256 - blockSize;
+
+  // Steps
+  let steps = `<span style="color:var(--cyan)">Step 1:</span> Need ${needed} subnets → 2<sup>n</sup> ≥ ${needed} → <strong>n = ${n} bits</strong> to borrow<br>`;
+  steps += `<span style="color:var(--cyan)">Step 2:</span> New prefix = /${cidr} + ${n} = <strong>/${newCidr}</strong> (Subnet mask last octet: ${maskOctet})<br>`;
+  steps += `<span style="color:var(--cyan)">Step 3:</span> Host bits = 32 − ${newCidr} = ${hostBits} → <strong>2<sup>${hostBits}</sup> − 2 = ${hostsPerSubnet} usable hosts</strong> per subnet<br>`;
+  steps += `<span style="color:var(--cyan)">Step 4:</span> Block size = 256 − ${maskOctet} = <strong>${blockSize}</strong> (each subnet jumps by ${blockSize})<br>`;
+  steps += `<span style="color:var(--cyan)">Step 5:</span> Total subnets created = 2<sup>${n}</sup> = <strong>${numSubnets}</strong>`;
+
+  document.getElementById('calc-steps').innerHTML = steps;
+
+  const grid = document.getElementById('calc-grid');
+  grid.innerHTML = `
+    <div class="result-item"><div class="r-label">Subnets Created</div><div class="r-value">${numSubnets}</div></div>
+    <div class="result-item"><div class="r-label">New Prefix</div><div class="r-value">/${newCidr}</div></div>
+    <div class="result-item"><div class="r-label">Usable Hosts/Subnet</div><div class="r-value">${hostsPerSubnet}</div></div>
+    <div class="result-item"><div class="r-label">Block Size</div><div class="r-value">${blockSize}</div></div>
+    <div class="result-item"><div class="r-label">Bits Borrowed</div><div class="r-value">${n}</div></div>
+    <div class="result-item"><div class="r-label">Subnet Mask (last oct.)</div><div class="r-value">${maskOctet}</div></div>
+  `;
+
+  // Subnet table
+  let tableHTML = `<div style="font-size:.7rem;color:var(--cyan);font-family:var(--font-mono);letter-spacing:.08em;margin-bottom:8px">── SUBNET RANGES ──</div>`;
+  tableHTML += `<table class="neat-table"><thead><tr><th>#</th><th>Network Addr</th><th>Broadcast Addr</th><th>Usable Range</th><th>Hosts</th></tr></thead><tbody>`;
+  
+  let base = [...parts];
+  const ipNum = (base[0]<<24)|(base[1]<<16)|(base[2]<<8)|base[3];
+  const networkBase = ipNum & (~((1<<(32-cidr))-1) >>> 0);
+
+  for(let i = 0; i < Math.min(numSubnets, 16); i++) {
+    const netNum = networkBase + i * blockSize;
+    const bcNum  = netNum + blockSize - 1;
+    const n1 = numToOctets(netNum);
+    const b1 = numToOctets(bcNum);
+    const h1 = numToOctets(netNum + 1);
+    const h2 = numToOctets(bcNum - 1);
+    tableHTML += `<tr>
+      <td style="color:var(--cyan);font-family:var(--font-mono)">${i+1}</td>
+      <td style="font-family:var(--font-mono);color:var(--orange);font-size:.78rem">${n1}</td>
+      <td style="font-family:var(--font-mono);color:var(--red);font-size:.78rem">${b1}</td>
+      <td style="font-family:var(--font-mono);color:var(--green);font-size:.78rem">${h1} – ${h2}</td>
+      <td style="font-family:var(--font-mono)">${hostsPerSubnet}</td>
+    </tr>`;
+  }
+  if(numSubnets > 16) tableHTML += `<tr><td colspan="5" style="text-align:center;color:var(--muted)">... and ${numSubnets-16} more subnets</td></tr>`;
+  tableHTML += '</tbody></table>';
+  document.getElementById('calc-subnet-table').innerHTML = tableHTML;
+
+  const res = document.getElementById('calc-result');
+  res.classList.add('show');
+}
+
+function numToOctets(n) {
+  return [(n>>>24)&255, (n>>>16)&255, (n>>>8)&255, n&255].join('.');
+}
+
+// ═══════════ QUIZ ═══════════
+const questions = [
+  {
+    q: "What does the subnet mask 255.255.255.0 tell us about an IP address?",
+    opts: ["The last 8 bits are the network, first 24 are host", "The first 24 bits are the network, last 8 bits are host", "All 32 bits are host bits", "The IP belongs to Class D"],
+    ans: 1,
+    explain: "255 in binary = 11111111. Three octets of 255 = 24 network bits. The last octet is 0 = 8 host bits. So /24 means 24 network bits + 8 host bits."
+  },
+  {
+    q: "Using the formula 2^h − 2: How many usable hosts are in a /28 subnet?",
+    opts: ["16", "14", "30", "12"],
+    ans: 1,
+    explain: "Host bits = 32 − 28 = 4. So 2^4 − 2 = 16 − 2 = 14 usable hosts. We subtract 2 for the Network Address and Broadcast Address."
+  },
+  {
+    q: "You need 6 subnets. How many bits do you need to borrow?",
+    opts: ["2 bits (4 subnets)", "3 bits (8 subnets)", "1 bit (2 subnets)", "4 bits (16 subnets)"],
+    ans: 1,
+    explain: "2^n ≥ 6. Try n=2: 4 ❌. Try n=3: 8 ✅. You must borrow 3 bits to get at least 6 subnets (giving you 8 subnets total)."
+  },
+  {
+    q: "What is the Network Address in subnet 192.168.1.64/26?",
+    opts: ["192.168.1.63", "192.168.1.65", "192.168.1.64", "192.168.1.1"],
+    ans: 2,
+    explain: "The Network Address is always the FIRST address in the subnet range — where all host bits are 0. For the /26 subnet starting at .64, the network address is 192.168.1.64."
+  },
+  {
+    q: "What is the Broadcast Address in subnet 192.168.1.0/26?",
+    opts: ["192.168.1.62", "192.168.1.63", "192.168.1.64", "192.168.1.255"],
+    ans: 1,
+    explain: "Block size = 64. The range is .0 to .63. The Broadcast Address is the LAST address — .63. All host bits are 1 in binary."
+  },
+  {
+    q: "In Classful addressing, which class would you use for 300 devices?",
+    opts: ["Class C (254 hosts)", "Class B (65,534 hosts)", "Class A (16M hosts)", "Class D (Multicast)"],
+    ans: 1,
+    explain: "Class C only supports 254 hosts — not enough for 300. Class B gives 65,534 hosts — wasteful, but the only option in classful. This is exactly why CIDR was invented!"
+  },
+  {
+    q: "What does /26 mean in CIDR notation?",
+    opts: ["26 host bits, 6 network bits", "26 network bits, 6 host bits", "26 total subnets", "26 usable hosts"],
+    ans: 1,
+    explain: "The number after / in CIDR is always the count of NETWORK bits. /26 = 26 network bits. Host bits = 32 − 26 = 6. Usable hosts = 2^6 − 2 = 62."
+  },
+  {
+    q: "Which routing type automatically finds alternative paths when a link fails?",
+    opts: ["Static Routing", "Dynamic Routing", "Default Routing", "None of these"],
+    ans: 1,
+    explain: "Dynamic routing protocols (OSPF, RIP, BGP) automatically update routing tables when topology changes. Static routing requires manual changes — it won't adapt on its own."
+  },
+  {
+    q: "What is a Default Gateway?",
+    opts: ["The first usable IP in a subnet", "The IP of the router that connects your network to other networks", "The broadcast address", "Your device's own IP address"],
+    ans: 1,
+    explain: "The Default Gateway is your router's IP on your local subnet. Any traffic going OUTSIDE your network is sent to the default gateway, which forwards it to its destination."
+  },
+  {
+    q: "PAT (Port Address Translation) allows...",
+    opts: ["One device to have many public IPs", "Many private IPs to share ONE public IP using port numbers", "Static one-to-one IP mapping", "Routing between subnets without a router"],
+    ans: 1,
+    explain: "PAT (also called NAPT) is what your home router does — it maps many private IPs (192.168.x.x) to ONE public IP, using different port numbers to track each connection."
+  }
+];
+
+let quizAnswered = new Array(10).fill(false);
+let quizScore = 0;
+
+function initQuiz() {
+  const container = document.getElementById('quiz-container');
+  if(container.innerHTML.trim()) return; // already built
+
+  container.innerHTML = questions.map((q, i) => `
+    <div class="card" id="qcard-${i}" style="margin-bottom:20px">
+      <div style="font-size:.65rem;font-family:var(--font-mono);color:var(--muted);letter-spacing:.1em;margin-bottom:10px">QUESTION ${i+1} OF ${questions.length}</div>
+      <div class="quiz-question">${q.q}</div>
+      <div class="quiz-options">
+        ${q.opts.map((opt, j) => `
+          <div class="quiz-option" id="opt-${i}-${j}" onclick="answerQ(${i},${j})">
+            <div class="quiz-opt-letter">${String.fromCharCode(65+j)}</div>
+            ${opt}
+          </div>
+        `).join('')}
+      </div>
+      <div class="quiz-feedback" id="qfb-${i}"></div>
+      <button class="btn-next" id="qnext-${i}" style="display:none" onclick="scrollToNext(${i})">Next Question →</button>
+    </div>
+  `).join('');
+}
+
+function answerQ(qi, oi) {
+  if(quizAnswered[qi]) return;
+  quizAnswered[qi] = true;
+
+  const q = questions[qi];
+  const opts = document.querySelectorAll(`[id^="opt-${qi}-"]`);
+  opts.forEach(o => o.classList.add('disabled'));
+
+  const chosen = document.getElementById(`opt-${qi}-${oi}`);
+  const fb = document.getElementById(`qfb-${qi}`);
+
+  if(oi === q.ans) {
+    chosen.classList.add('correct');
+    fb.className = 'quiz-feedback ok show';
+    fb.innerHTML = '✅ Correct! ' + q.explain;
+    quizScore++;
+  } else {
+    chosen.classList.add('wrong');
+    document.getElementById(`opt-${qi}-${q.ans}`).classList.add('correct');
+    fb.className = 'quiz-feedback fail show';
+    fb.innerHTML = '❌ Not quite. ' + q.explain;
+  }
+
+  document.getElementById('quiz-score').textContent = `${quizScore}/${quizAnswered.filter(Boolean).length}`;
+  const remaining = quizAnswered.filter(Boolean).length;
+  document.getElementById('quiz-progress').textContent = remaining < 10 ? `${10-remaining} questions remaining` : 'All done! Great work!';
+
+  if(qi < 9) document.getElementById(`qnext-${qi}`).style.display = 'inline-block';
+}
+
+function scrollToNext(qi) {
+  const next = document.getElementById(`qcard-${qi+1}`);
+  if(next) next.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+</script>
+</body>
+</html>
